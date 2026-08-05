@@ -1180,7 +1180,12 @@ function buildDailySheet(ymd) {
   html += staffRows || '<tr><td colspan="3">職員なし</td></tr>';
   html += '</tbody></table></div>';
   html += '<div class="daily-section"><h3>特記すべき業務内容</h3><p>' + (d.work ? escapeHtml(d.work).replace(/\n/g,"<br>") : "&nbsp;") + '</p></div>';
-  html += '<div class="daily-section"><h3>報告・連絡事項</h3><p>' + (d.report ? escapeHtml(d.report).replace(/\n/g,"<br>") : "&nbsp;") + '</p></div>';
+  html += '<div class="daily-section"><h3>報告・連絡事項</h3>';
+  var incSum = incidentSummaryFor(ymd);
+  var reportHtml = incSum ? escapeHtml(incSum) : "";
+  if (incSum && d.report) reportHtml += "<br>";
+  if (d.report) reportHtml += escapeHtml(d.report).replace(/\n/g,"<br>");
+  html += '<p>' + (reportHtml || "&nbsp;") + '</p></div>';
   html += '</div>';
   return html;
 }
@@ -1461,6 +1466,8 @@ function renderDaily() {
   html += '<textarea id="workText" rows="4">' + escapeHtml(workForDisplay) + '</textarea></div>';
 
   html += '<div class="daily-section"><h3>報告・連絡事項</h3>';
+  var incSum = incidentSummaryFor(currentDaily);
+  if (incSum) html += '<p class="inc-note" style="margin-bottom:6px;">' + escapeHtml(incSum) + '</p>';
   html += '<textarea id="reportText" rows="4">' + escapeHtml(d.report) + '</textarea></div>';
 
   html += '<button class="save-btn daily-action" onclick="saveDailyForm()">業務日誌を保存</button>';
@@ -1922,6 +1929,20 @@ function loadIncidents() {
   catch(e) { return []; }
 }
 function saveIncidents(list) { localStorage.setItem(INCIDENT_KEY, JSON.stringify(list)); }
+
+function incidentSummaryFor(ymd) {
+  try {
+    return loadIncidents().filter(function(x){ return x.date === ymd; }).map(function(x) {
+      var label = x.type === "アクシデント" ? "事故あり" : "ヒヤリハットあり";
+      var involved = [];
+      if (x.users && x.users.length) involved = involved.concat(x.users);
+      if (x.staffs && x.staffs.length) involved = involved.concat(x.staffs);
+      if (!involved.length && x.userName) involved.push(x.userName);
+      if (!involved.length && x.staffName) involved.push(x.staffName);
+      return label + (involved.length ? "（当事者" + involved.join("・") + "）" : "");
+    }).join("、");
+  } catch (e) { return ""; }
+}
 
 var currentIncidentId = null;
 var incidentFormFrom = "main";

@@ -1,4 +1,4 @@
-var CACHE = "sumore-cache-v7";
+var CACHE = "sumore-cache-v8";
 var ASSETS = [
   "./",
   "./index.html",
