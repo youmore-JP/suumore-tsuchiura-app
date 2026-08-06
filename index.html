@@ -259,13 +259,45 @@ table.daily-table th, table.daily-table td { white-space: nowrap; }
 .inc-label { display: block; font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #2b2b2b; }
 .inc-sec { margin-bottom: 22px; }
 
+/* 帳票共通構成（画面プレビュー・印刷で共通） */
+.p-doc-head { position: relative; text-align: center; margin-bottom: 14px; }
+.p-facility { font-size: 12px; font-weight: 700; letter-spacing: .18em; color: #444; }
+.p-title {
+  display: inline-block; font-size: 20px; font-weight: 700; letter-spacing: .14em;
+  padding: 3px 24px 6px; border-bottom: 2px solid #222; margin-top: 2px;
+}
+.p-outdate { position: absolute; top: 2px; right: 0; font-size: 11px; color: #666; }
+.p-person { margin: 10px 0 12px; text-align: center; font-size: 14px; }
+.u-line { display: inline-block; min-width: 48px; padding: 0 6px; border-bottom: 1px solid #333; }
+.p-note { margin-top: 8px; font-size: 11px; color: #666; line-height: 1.6; }
+.p-sec { margin: 12px 0; }
+.p-sec-title {
+  font-size: 15px; font-weight: 700; padding-bottom: 3px;
+  border-bottom: 1px solid #888; margin-bottom: 8px;
+}
+.p-line { display: flex; align-items: baseline; margin-bottom: 6px; }
+.p-line .p-label { flex: 0 0 96px; font-size: 13px; font-weight: 700; }
+.p-line .p-val {
+  flex: 1; min-height: 26px; padding: 2px 8px;
+  border-bottom: 1px solid #ccc; font-size: 13px; line-height: 1.7;
+}
+.p-confirm { display: flex; gap: 12px; justify-content: flex-end; margin-top: 14px; }
+.p-confirm-box { width: 260px; border: 1px solid #333; padding: 10px 12px; font-size: 12px; }
+.p-confirm-label { font-size: 11px; font-weight: 700; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 6px; }
+.bl { display: inline-block; min-width: 48px; height: 16px; border-bottom: 1px solid #333; vertical-align: bottom; }
+tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700; }
+
 @media print {
-  @page { size: A4; margin: 10mm; }
+  @page { size: A4 portrait; margin: 15mm 14mm 14mm 14mm; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  body { background: #fff; }
-  button { display: none !important; }
-  .work-red h3, .work-red textarea { color: #2b2b2b !important; font-weight: 400 !important; }
+  html, body { background: #fff !important; }
+  body {
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", "Noto Serif CJK JP", "MS PMincho", serif;
+    color: #111; font-size: 10pt; line-height: 1.5;
+  }
+  button, input, select, textarea { display: none !important; }
   header, .header-right, .back-btn, .month-nav, .notice, .btn-print, .no-print { display: none !important; }
+  .work-red h3, .work-red textarea, .work-red p { color: #111 !important; font-weight: 400 !important; }
   /* 通常印刷（月間一括・実績表）はアクティブ画面を表示 */
   #print-daily-container:empty ~ .screen.active { display: block; }
   /* 日別印刷時は、専用コンテナだけ表示し、他をすべて隠す */
@@ -273,91 +305,134 @@ table.daily-table th, table.daily-table td { white-space: nowrap; }
   #print-daily-container:not(:empty) ~ .screen, #print-daily-container:not(:empty) ~ .screen.active,
   #print-daily-container:not(:empty) ~ * { display: none !important; }
   .container { max-width: 100%; padding: 0; }
-  .sheet { border: none; padding: 0; page-break-after: always; }
+  .sheet {
+    background: #fff; border: none; box-shadow: none; border-radius: 0;
+    padding: 0; margin: 0;
+    page-break-after: always; page-break-inside: avoid;
+  }
   .sheet:last-child { page-break-after: auto; }
   /* 印刷時は横スクロール用スタイルを解除（はみ出し・切れ防止） */
-  .daily-section, .table-scroll { overflow: visible; }
-  .daily-section table.daily-table, .table-scroll table.daily-table { min-width: 0; }
+  .daily-section, .table-scroll { overflow: visible !important; }
+  .daily-section table.daily-table, .table-scroll table.daily-table { min-width: 0 !important; }
   /* 印刷用コンテナ内の編集用ハイライト（青文字）を黒に */
   #print-daily-container .print-table td { color: #000 !important; cursor: default; }
 
-  /* 業務日誌をA4に収める */
-  .daily-sheet {
-    width: 100%;
-    padding: 4mm 6mm;
-    box-sizing: border-box;
-    font-size: 11px;
+  /* ===== 帳票ヘッダー ===== */
+  .p-doc-head { text-align: center; position: relative; margin-bottom: 3mm; }
+  .p-facility {
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    font-size: 9pt; letter-spacing: .25em; color: #333; font-weight: 700;
   }
-  .daily-sheet h2 { font-size: 14px; margin-bottom: 3px; }
-  .daily-sheet .daily-date { font-size: 11px; margin-bottom: 5px; }
-  .daily-sheet .daily-summary { margin-bottom: 5px; }
-  .daily-sheet .daily-summary p { font-size: 11px; line-height: 1.5; }
-  .daily-sheet .daily-section { margin-bottom: 5px; }
-  .daily-sheet .daily-section h3 { font-size: 11px; margin-bottom: 2px; }
-  .daily-sheet .daily-section p { font-size: 10.5px; line-height: 1.5; min-height: 2em; }
-  table.daily-table { font-size: 10px; }
-  table.daily-table th, table.daily-table td { padding: 2px 4px; }
-  table.daily-table tbody tr { height: auto; }
-  /* 個別支援記録の印刷 */
-  .supday { margin-bottom: 7mm; page-break-inside: avoid; border: 1px solid #999; padding: 3mm 4mm; }
-  .supday-head { font-size: 11px; font-weight: 700; margin-bottom: 2mm; border-bottom: 1px solid #ccc; padding-bottom: 1mm; }
-  .supday-main { font-size: 10.5px; line-height: 1.6; min-height: 22mm; }
-  .supday-main .supday-label { margin-top: 1mm; }
-  .supday-body { font-size: 10.5px; line-height: 1.5; }
-  .supday-summary { margin-top: 2mm; padding-top: 2mm; border-top: 1px solid #ddd; font-size: 10px; line-height: 1.5; display: flex; gap: 2mm; }
-  .supday-summary .sup-box { border: 1px solid #999; padding: 1.5mm 2.5mm; flex: 1; }
-  .supday-summary .supday-label { font-weight: 700; font-size: 9.5px; }
-  .supday-summary .supday-body { font-size: 10px; }
-  .sheet h2 { font-size: 14px; }
-  .sheet { font-size: 11px; }
-  /* 実績記録表の印刷（加算の列数は可変なので自動レイアウトにする） */
+  .p-title {
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    display: inline-block; font-size: 13.5pt; font-weight: 700; letter-spacing: .3em;
+    padding: 1mm 7mm 1.4mm; border-bottom: 1.4pt solid #111; margin-top: 1.5mm;
+  }
+  .p-outdate { position: absolute; top: 0; right: 0; font-size: 8.5pt; color: #333; }
+  .p-person { text-align: center; font-size: 10pt; margin: 0 0 2.5mm; }
+  .u-line { display: inline-block; min-width: 7mm; padding: 0 2mm; border-bottom: 0.8pt solid #111; }
+  .p-note { font-size: 7.5pt; color: #444; margin-top: 1.5mm; line-height: 1.5; }
+
+  /* ===== 表 ===== */
+  table.print-table {
+    width: 100%; border-collapse: collapse; table-layout: fixed;
+    font-size: 9pt; line-height: 1.35;
+  }
+  table.print-table th, table.print-table td {
+    border: 0.6pt solid #222;
+    padding: 0.7mm 1.3mm;
+    text-align: center; vertical-align: middle;
+    overflow: hidden; word-break: break-word;
+  }
+  table.print-table thead th {
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    font-size: 8.5pt; font-weight: 700;
+    background: #f2f4f7; border-bottom: 1.2pt solid #222;
+  }
+  table.print-table tbody tr { page-break-inside: avoid; }
+  table.print-table tr.p-total td, table.print-table tr.p-total th {
+    background: #f2f4f7 !important; font-weight: 700; border-top: 1.2pt solid #222;
+  }
+  /* 勤退表の列幅 */
+  table.print-table th:nth-child(1), table.print-table td:nth-child(1) { width: 13%; }
+  table.print-table th:nth-child(2), table.print-table td:nth-child(2) { width: 8%; }
+  table.print-table th:nth-child(3), table.print-table td:nth-child(3) { width: 18%; }
+  table.print-table th:nth-child(4), table.print-table td:nth-child(4) { width: 18%; }
+  table.print-table th:nth-child(5), table.print-table td:nth-child(5) { width: 15%; }
+  table.print-table th:nth-child(6), table.print-table td:nth-child(6) { width: 28%; }
+  /* 業務日誌の利用者状況表（10列） */
+  table.user-table th:nth-child(1), table.user-table td:nth-child(1) { width: 24%; }
+  table.user-table th:nth-child(2), table.user-table td:nth-child(2) { width: 11%; }
+  /* 実績記録票（加算の列数は可変なので自動レイアウト） */
   .sheet table.print-table.summary-table { table-layout: auto; }
   .sheet table.print-table.summary-table th, .sheet table.print-table.summary-table td { overflow: visible; }
-  .sheet table.print-table.summary-table th:nth-child(1), .sheet table.print-table.summary-table td:nth-child(1),
-  .sheet table.print-table.summary-table th:nth-child(2), .sheet table.print-table.summary-table td:nth-child(2) { width: 9%; }
+  .sheet table.print-table.summary-table th:nth-child(1), .sheet table.print-table.summary-table td:nth-child(1) { width: 9%; }
+  .sheet table.print-table.summary-table th:nth-child(2), .sheet table.print-table.summary-table td:nth-child(2) { width: 6%; }
 
-  /* 事故報告書の印刷レイアウト（A4にバランスよく収める） */
-  .incident-print {
-    padding: 8mm 10mm;
-    border: none;
-    box-sizing: border-box;
-    page-break-after: auto;
+  /* ===== セクション（業務日誌） ===== */
+  .p-sec { margin: 3mm 0 4mm; page-break-inside: avoid; }
+  .p-sec-title {
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    font-size: 10.5pt; font-weight: 700;
+    border-bottom: 0.6pt solid #666; padding-bottom: 0.8mm; margin-bottom: 2mm;
   }
-  .incident-print h2 {
-    text-align: center;
-    font-size: 17px;
-    letter-spacing: .5px;
-    border-bottom: 2px solid #d93025;
-    padding-bottom: 8px;
-    margin-bottom: 16px;
+  .p-line { display: flex; align-items: baseline; margin-bottom: 1.2mm; }
+  .p-line .p-label {
+    flex: 0 0 24mm; font-size: 9pt; font-weight: 700;
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
   }
-  .incident-print table.print-table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-    font-size: 13px;
+  .p-line .p-val {
+    flex: 1; min-height: 7mm; padding: 0.6mm 2mm 0;
+    border-bottom: 0.5pt solid #999;
+    font-size: 9.5pt; line-height: 1.6;
   }
+
+  /* ===== 個別支援記録 ===== */
+  .supday { border: 0.8pt solid #333; margin-bottom: 4mm; page-break-inside: avoid; }
+  .supday-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    font-size: 9.5pt; font-weight: 700;
+    background: #f2f4f7; border-bottom: 0.8pt solid #333;
+    padding: 1.4mm 2.5mm;
+  }
+  .supday-main { padding: 2mm 2.5mm; min-height: 20mm; }
+  .supday-label { font-size: 8.5pt; font-weight: 700; color: #444; }
+  .supday-body { font-size: 9.5pt; line-height: 1.7; }
+  .supday-summary { display: flex; gap: 2mm; border-top: 0.5pt solid #999; padding: 2mm 2.5mm; }
+  .sup-box { flex: 1; border: 0.5pt solid #333; padding: 1.5mm 2mm; }
+
+  /* ===== 事故報告書 ===== */
+  .incident-print { padding: 0; border: none; box-sizing: border-box; }
+  .incident-print table.print-table { font-size: 10pt; }
   .incident-print table.print-table th,
   .incident-print table.print-table td {
-    border: 1px solid #444;
-    padding: 12px 14px;
-    vertical-align: middle;
-    line-height: 1.8;
-    text-align: left;
-    box-sizing: border-box;
+    padding: 2mm 3mm; text-align: left; vertical-align: top; line-height: 1.7;
   }
   .incident-print table.print-table th {
-    width: 24%;
-    background: #fdecec;
-    font-weight: 700;
-    font-size: 12.5px;
+    width: 26%;
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    font-size: 9.5pt; text-align: center; vertical-align: middle;
+    background: #f2f4f7;
   }
-  .incident-print table.print-table td {
-    width: 76%;
-    font-size: 13px;
-    word-break: break-word;
+
+  /* ===== 確認欄・ページフッター ===== */
+  .p-confirm { display: flex; gap: 4mm; justify-content: flex-end; margin-top: 3mm; page-break-inside: avoid; }
+  .p-confirm-box { width: 66mm; border: 0.8pt solid #333; padding: 1.6mm 2.5mm; font-size: 9pt; }
+  .p-confirm-label {
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
+    font-size: 8pt; font-weight: 700;
+    border-bottom: 0.5pt solid #999; padding-bottom: 0.7mm; margin-bottom: 1.2mm;
   }
-  .incident-print table.print-table tbody tr { page-break-inside: avoid; }
+  .p-confirm-box .p-line2 { margin-top: 1mm; }
+  .bl { display: inline-block; min-width: 12mm; height: 3.2mm; border-bottom: 0.8pt solid #222; vertical-align: bottom; }
+  .p-footer {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-between;
+    font-size: 8pt; color: #333;
+    border-top: 0.5pt solid #888; padding-top: 1.2mm;
+    background: #fff;
+  }
 }
 </style>
 </head>
@@ -555,7 +630,7 @@ table.daily-table th, table.daily-table td { white-space: nowrap; }
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-manage-menu')">← 管理者メニューへ</button>
     <h2>PDF出力・印刷</h2>
-    <div class="notice">印刷プレビューを表示します。ブラウザの「印刷」でPDF保存・印刷できます。印刷ダイアログで用紙をA4に設定してください。</div>
+    <div class="notice">印刷プレビューを表示します。ブラウザの「印刷」ダイアログで、用紙サイズを「A4（縦）」に設定してください。各帳票は1ページに収まるように整形されています（複数ページのときは自動でページ送りされます）。</div>
     <div class="month-nav">
       <button onclick="changeMonthExport(-1)">◀ 前月</button>
       <span class="ym" id="exportYM"></span>
@@ -937,11 +1012,64 @@ function monthDays(ym) {
   return new Date(Number(parts[0]), Number(parts[1]), 0).getDate();
 }
 
+// ============ 印刷文書ヘルパー（帳票の共通構成） ============
+var FACILITY_NAME = "共同生活援助 SUUMORE TSUCHIURA";
+
+function eraYearStr(y) {
+  var eras = [["令和", 2019], ["平成", 1989], ["昭和", 1926]];
+  for (var i = 0; i < eras.length; i++) {
+    if (y >= eras[i][1]) return eras[i][0] + (y - eras[i][1] + 1) + "年";
+  }
+  return y + "年";
+}
+function eraYM(ym) {
+  var p = ym.split("-");
+  return eraYearStr(Number(p[0])) + Number(p[1]) + "月";
+}
+function ymdLabel(ymd) {
+  if (!ymd) return "";
+  var t = toWDate(ymd);
+  return t.era + t.year + "年" + t.month + "月" + t.day + "日（" + t.week + "）";
+}
+function printOutDate() { return ymdLabel(todayStr()); }
+function underline(t) { return '<span class="u-line">' + t + '</span>'; }
+
+function pDocHead(title) {
+  return '<div class="p-doc-head">' +
+    '<div class="p-outdate">出力日：' + printOutDate() + '</div>' +
+    '<div class="p-facility">' + FACILITY_NAME + '</div>' +
+    '<div class="p-title">' + title + '</div>' +
+    '</div>';
+}
+function pPerson(t) { return '<p class="p-person">' + t + '</p>'; }
+function pNote(t) { return '<p class="p-note">' + t + '</p>'; }
+function pLine(label, val, minH) {
+  var body = val ? String(val) : "";
+  body = body ? escapeHtml(body).replace(/\n/g, "<br>") : "&nbsp;";
+  return '<div class="p-line">' +
+    (label ? '<span class="p-label">' + label + '</span>' : '') +
+    '<span class="p-val"' + (minH ? ' style="min-height:' + minH + '"' : '') + '>' + body + '</span>' +
+    '</div>';
+}
+function pSign(label, names) {
+  var n = (names || []).join("・");
+  return '<div class="p-confirm-box"><div class="p-confirm-label">' + label + '</div>' +
+    '<div class="p-line2">氏名：' + (n ? underline(escapeHtml(n)) : '&nbsp;') + '</div>' +
+    '<div class="p-line2">押印：（　）</div>' +
+    '</div>';
+}
+function pFooter() {
+  return '<div class="p-footer">' +
+    '<span>' + FACILITY_NAME + '</span>' +
+    '<span>出力日：' + printOutDate() + '</span>' +
+    '</div>';
+}
+
 function buildSheet(person, ym) {
   var days = monthDays(ym);
   var html = '<div class="sheet">';
-  html += '<h2>【共同生活援助 SUUMORE TSUCHIURA 職員勤退表】</h2>';
-  html += '<p class="person-line">氏名：' + escapeHtml(person.name) + '（' + person.role + '）　　期間：' + ym.split("-")[0] + "年" + Number(ym.split("-")[1]) + "月</p>";
+  html += pDocHead("職員勤退表");
+  html += pPerson('氏名：' + underline(escapeHtml(person.name)) + '（' + person.role + '）　　期間：' + eraYM(ym));
   html += '<table class="print-table"><thead><tr><th>日付</th><th>曜日</th><th>出勤</th><th>退勤</th><th>休憩</th><th>勤務時間</th></tr></thead><tbody>';
   var recs = loadRecords();
   var totalMin = 0;
@@ -990,13 +1118,17 @@ function buildSheet(person, ym) {
     var outCell = r ? '<td onclick="editTime(\'' + key + '\',\'out\')" style="cursor:pointer;color:#1a73e8">' + (outT || "ー") + forgotTxt + '</td>' : '<td></td>';
     var brCell = r && r.in ? '<td onclick="editBreak(\'' + key + '\')" style="cursor:pointer;color:#1a73e8">' + breakTxt + '</td>' : '<td></td>';
     // 記録がある日は日付セルに削除ボタン（誤打刻の完全削除用・印刷時は非表示）
+    var md = Number(ym.split("-")[1]) + "月" + d + "日";
     var dateCell = r
-      ? '<td style="cursor:pointer;color:#d93025;font-size:11px" onclick="deleteRecord(\'' + key + '\')" title="この日の記録を削除">' + (ym.split("-")[1]) + "/" + d + '<span class="no-print"> ✕</span></td>'
-      : '<td>' + (ym.split("-")[1]) + "/" + d + '</td>';
+      ? '<td style="cursor:pointer;color:#d93025;font-size:11px" onclick="deleteRecord(\'' + key + '\')" title="この日の記録を削除">' + md + '<span class="no-print"> ✕</span></td>'
+      : '<td>' + md + '</td>';
     html += '<tr' + cls + '>' + dateCell + '<td>' + wk + '</td>' + inCell + outCell + brCell + '<td>' + workH + '</td></tr>';
   }
-  html += '<tr style="background:#eef1f5;font-weight:700"><td colspan="5">月間勤務時間合計</td><td>' + minToHM(totalMin) + '</td></tr>';
-  html += '</tbody></table></div>';
+  html += '<tr class="p-total"><td colspan="5">月間勤務時間合計</td><td>' + minToHM(totalMin) + '</td></tr>';
+  html += '</tbody></table>';
+  html += pNote("※休憩時間は、夜勤（出勤13時以降・退勤翌4〜12時）3時間／日勤1時間で自動計上されます。個別に異なる場合は管理者画面から修正できます。");
+  html += '<div class="p-confirm">' + pSign("管理者確認", []) + pSign("従業者（本人）確認", []) + '</div>';
+  html += '</div>';
   return html;
 }
 
@@ -1096,14 +1228,14 @@ function renderExport() {
 function doPrint() {
   if (exportType === "daily") {
     var html = buildDailySheetsForMonth(currentYM);
-    document.getElementById("print-daily-container").innerHTML = html;
+    document.getElementById("print-daily-container").innerHTML = pFooter() + html;
     window.print();
     document.getElementById("print-daily-container").innerHTML = "";
   } else {
     var list = loadStaff();
     var html = "";
     list.forEach(function(p) { html += buildSheet(p, currentYM); });
-    document.getElementById("print-daily-container").innerHTML = html;
+    document.getElementById("print-daily-container").innerHTML = pFooter() + html;
     window.print();
     document.getElementById("print-daily-container").innerHTML = "";
   }
@@ -1139,17 +1271,18 @@ function buildDailySheet(ymd) {
 
   function mk(v) { return v ? "○" : ""; }
 
-  var html = '<div class="sheet daily-sheet">';
-  html += '<h2>【共同生活援助 SUUMORE TSUCHIURA 業務日誌】</h2>';
-  html += '<p class="person-line" style="text-align:center">' + dailyRangeLabel(ymd) + '</p>';
-  html += '<p class="person-line" style="text-align:right">記入者：' + (d.author ? escapeHtml(d.author) : "") + '</p>';
-  html += '<div class="daily-section"><h3>利用者状況</h3>';
+  var html = '<div class="sheet">';
+  html += pDocHead("業務日誌");
+  html += pPerson('対象日：' + dailyRangeLabel(ymd) + (d.author ? '　記入者：' + underline(escapeHtml(d.author)) : ''));
+
+  // １．利用者状況
+  html += '<div class="p-sec"><div class="p-sec-title">１．利用者状況</div>';
   var users = loadUsers(); // 過去日では退去者も表示する
   var us = d.userStatus || {};
   if (users.length === 0) {
-    html += '<p>&nbsp;</p>';
+    html += pLine("", "");
   } else {
-    html += '<table class="daily-table"><thead><tr><th>氏名</th><th>体温</th><th>食事・昼</th><th>食事・夕</th><th>食事・朝</th><th>服薬・昼</th><th>服薬・夕</th><th>服薬・朝</th><th>お風呂</th><th>洗濯</th></tr></thead><tbody>';
+    html += '<table class="print-table user-table"><thead><tr><th>氏名</th><th>体温</th><th>食事・昼</th><th>食事・夕</th><th>食事・朝</th><th>服薬・昼</th><th>服薬・夕</th><th>服薬・朝</th><th>お風呂</th><th>洗濯</th></tr></thead><tbody>';
     users.forEach(function(u) {
       var st = us[u.id] || defaultUserStatus();
       html += '<tr><td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>' +
@@ -1161,31 +1294,48 @@ function buildDailySheet(ymd) {
     html += '</tbody></table>';
   }
   html += '</div>';
-  html += '<div class="daily-section"><h3>食事</h3>';
-  html += '<p>昼食：' + (d.lunch ? escapeHtml(d.lunch).replace(/\n/g,"<br>") : "&nbsp;") + '</p>';
-  html += '<p>夕食：' + (d.dinner ? escapeHtml(d.dinner).replace(/\n/g,"<br>") : "&nbsp;") + '</p>';
-  html += '<p>朝食（翌朝）：' + (d.breakfast ? escapeHtml(d.breakfast).replace(/\n/g,"<br>") : "&nbsp;") + '</p>';
+
+  // ２．食事
+  html += '<div class="p-sec"><div class="p-sec-title">２．食事</div>';
+  html += pLine("昼食", d.lunch) + pLine("夕食", d.dinner) + pLine("朝食（翌朝）", d.breakfast);
   html += '</div>';
-  // 夜間巡視
+
+  // ３．夜間巡視
   var rounds = d.rounds || [];
-  html += '<div class="daily-section"><h3>夜間巡視</h3>';
+  html += '<div class="p-sec"><div class="p-sec-title">３．夜間巡視</div>';
   for (var ri = 0; ri < 3; ri++) {
     var rd = rounds[ri] || { time: "", ok: 1, note: "" };
-    html += '<p>第' + (ri+1) + '回　' + (rd.time || "ー") + '：' + (rd.ok ? '異常なし' : '異常あり') +
-      (rd.note ? '（' + escapeHtml(rd.note) + '）' : '') + '</p>';
+    html += pLine("第" + (ri + 1) + "回",
+      (rd.time || "ー") + "：" + (rd.ok ? "異常なし" : "異常あり") + (rd.note ? "（" + rd.note + "）" : ""));
   }
   html += '</div>';
-  html += '<div class="daily-section"><h3>職員状況</h3>';
-  html += '<table class="daily-table"><thead><tr><th>氏名</th><th>出勤</th><th>退勤</th></tr></thead><tbody>';
+
+  // ４．職員状況
+  html += '<div class="p-sec"><div class="p-sec-title">４．職員状況</div>';
+  html += '<table class="print-table"><thead><tr><th>氏名</th><th>出勤</th><th>退勤</th></tr></thead><tbody>';
   html += staffRows || '<tr><td colspan="3">職員なし</td></tr>';
   html += '</tbody></table></div>';
-  html += '<div class="daily-section"><h3>特記すべき業務内容</h3><p>' + (d.work ? escapeHtml(d.work).replace(/\n/g,"<br>") : "&nbsp;") + '</p></div>';
-  html += '<div class="daily-section"><h3>報告・連絡事項</h3>';
+
+  // ５．特記すべき業務内容
+  html += '<div class="p-sec"><div class="p-sec-title">５．特記すべき業務内容</div>';
+  html += pLine("", d.work, "14mm");
+  html += '</div>';
+
+  // ６．報告・連絡事項
   var incSum = incidentSummaryFor(ymd);
-  var reportHtml = incSum ? escapeHtml(incSum) : "";
-  if (incSum && d.report) reportHtml += "<br>";
-  if (d.report) reportHtml += escapeHtml(d.report).replace(/\n/g,"<br>");
-  html += '<p>' + (reportHtml || "&nbsp;") + '</p></div>';
+  var reportHtml = "";
+  if (incSum) reportHtml = incSum;
+  if (incSum && d.report) reportHtml += "\n";
+  if (d.report) reportHtml += d.report;
+  html += '<div class="p-sec"><div class="p-sec-title">６．報告・連絡事項</div>';
+  html += pLine("", reportHtml, "10mm");
+  html += '</div>';
+
+  html += '<div class="p-confirm">' +
+    pSign("日勤記入者", d.authorsDay || []) +
+    pSign("夜勤記入者", d.authorsNight || []) +
+    pSign("管理者確認", []) +
+    '</div>';
   html += '</div>';
   return html;
 }
@@ -1560,7 +1710,7 @@ function printDaily() {
     saveDaily(daily);
   }
   var html = buildDailySheet(currentDaily);
-  document.getElementById("print-daily-container").innerHTML = html;
+  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
 }
@@ -1794,6 +1944,27 @@ function getMonday(ymd) {
   return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
 }
 
+// 個別支援記録1日分の行（週・月の印刷で共用）
+function supportRowHTML(ymd, idx, uid) {
+  var wd = ["月","火","水","木","金","土","日"];
+  var s = loadSupport()[ymd + "|" + uid] || { note: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
+  var mealMark = function(v) { return (v === undefined || v === null) ? '' : (v ? '○' : '×'); };
+  var activityTxt = s.activity ? (s.activity === "通所" ? "通所されている" : s.activity === "ホーム" ? "ホームで過ごされている" : "") : "";
+  if (s.activityOther) activityTxt = s.activityOther;
+  var t = toWDate(ymd);
+  return '<div class="supday">' +
+    '<div class="supday-head"><span>' + wd[idx] + '曜日　' + t.month + '月' + t.day + '日</span><span>記入者：' + escapeHtml(s.author) + '</span></div>' +
+    '<div class="supday-main"><p class="supday-label">本日の様子</p><p class="supday-body">' + escapeHtml(s.note).replace(/\n/g,"<br>") + '</p></div>' +
+    '<div class="supday-summary">' +
+    '<span class="sup-box"><span class="supday-label">健康状態</span><br><span class="supday-body">' + escapeHtml(s.health) + '</span></span>' +
+    '<span class="sup-box"><span class="supday-label">食事</span><br><span class="supday-body">昼（' + mealMark(s.mealLunch) + '）夕（' + mealMark(s.mealDinner) + '）朝（' + mealMark(s.mealBreakfast) + '）</span></span>' +
+    '<span class="sup-box"><span class="supday-label">昼間の活動</span><br><span class="supday-body">' + escapeHtml(activityTxt) + '</span></span>' +
+    '</div></div>';
+}
+function supportNoteBox() {
+  return '<div class="supday"><div class="supday-head"><span>特記・連絡</span></div><div class="supday-main" style="min-height:30mm"><p class="supday-body">&nbsp;</p></div></div>';
+}
+
 function printSupportWeek() {
   var sel = document.getElementById("supportUserSelect");
   var uid = sel.value;
@@ -1803,7 +1974,6 @@ function printSupportWeek() {
   users.forEach(function(x){ if (x.id === uid) u = x; });
   if (!u) return;
 
-  var support = loadSupport();
   var monday = getMonday(currentSupportDate);
   var mp = monday.split("-");
   var weekDays = [];
@@ -1811,36 +1981,22 @@ function printSupportWeek() {
     var d = new Date(Number(mp[0]), Number(mp[1])-1, Number(mp[2]) + i);
     weekDays.push(d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()));
   }
-  var wd = ["月","火","水","木","金","土","日"];
-
-  function row(ymd, idx) {
-    var s = support[ymd + "|" + uid] || { note: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
-    var mealMark = function(v) { return (v === undefined || v === null) ? '' : (v ? '〇' : '×'); };
-    var activityTxt = s.activity ? (s.activity === "通所" ? "通所されている" : s.activity === "ホーム" ? "ホームで過ごされている" : "") : "";
-    if (s.activityOther) activityTxt = s.activityOther;
-    return '<div class="supday"><p class="supday-head">' + wd[idx] + '（' + Number(ymd.split("-")[1]) + "/" + Number(ymd.split("-")[2]) + '）　記入者：' + escapeHtml(s.author) + '</p>' +
-      '<div class="supday-main"><p class="supday-label">本日の様子</p><p class="supday-body">' + escapeHtml(s.note).replace(/\n/g,"<br>") + '</p></div>' +
-      '<div class="supday-summary">' +
-      '<span class="sup-box"><span class="supday-label">健康状態</span><br><span class="supday-body">' + escapeHtml(s.health) + '</span></span>' +
-      '<span class="sup-box"><span class="supday-label">食事</span><br><span class="supday-body">昼（' + mealMark(s.mealLunch) + '）夕（' + mealMark(s.mealDinner) + '）朝（' + mealMark(s.mealBreakfast) + '）</span></span>' +
-      '<span class="sup-box"><span class="supday-label">昼間の活動</span><br><span class="supday-body">' + escapeHtml(activityTxt) + '</span></span>' +
-      '</div></div>';
-  }
 
   var page1 = '<div class="sheet">';
-  page1 += '<h2>【共同生活援助 SUUMORE TSUCHIURA 個別支援記録】</h2>';
-  page1 += '<p class="person-line" style="text-align:center">氏名：' + escapeHtml(u.name) + '</p>';
-  page1 += row(weekDays[0], 0) + row(weekDays[1], 1) + row(weekDays[2], 2) + row(weekDays[3], 3);
+  page1 += pDocHead("個別支援記録");
+  page1 += pPerson('氏名：' + underline(escapeHtml(u.name)) + '　期間：' + ymdLabel(weekDays[0]) + '〜' + ymdLabel(weekDays[6]));
+  page1 += supportRowHTML(weekDays[0], 0, uid) + supportRowHTML(weekDays[1], 1, uid) +
+    supportRowHTML(weekDays[2], 2, uid) + supportRowHTML(weekDays[3], 3, uid);
   page1 += '</div>';
 
   var page2 = '<div class="sheet">';
-  page2 += '<h2>【共同生活援助 SUUMORE TSUCHIURA 個別支援記録（続き）】</h2>';
-  page2 += '<p class="person-line" style="text-align:center">氏名：' + escapeHtml(u.name) + '</p>';
-  page2 += row(weekDays[4], 4) + row(weekDays[5], 5) + row(weekDays[6], 6);
-  page2 += '<div class="supday"><p class="supday-head">特記・連絡</p><div class="supday-main" style="min-height:40mm"><p class="supday-body">&nbsp;</p></div></div>';
+  page2 += pDocHead("個別支援記録（続き）");
+  page2 += pPerson('氏名：' + underline(escapeHtml(u.name)) + '　期間：' + ymdLabel(weekDays[0]) + '〜' + ymdLabel(weekDays[6]));
+  page2 += supportRowHTML(weekDays[4], 4, uid) + supportRowHTML(weekDays[5], 5, uid) +
+    supportRowHTML(weekDays[6], 6, uid) + supportNoteBox();
   page2 += '</div>';
 
-  document.getElementById("print-daily-container").innerHTML = page1 + page2;
+  document.getElementById("print-daily-container").innerHTML = pFooter() + page1 + page2;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
 }
@@ -1856,21 +2012,6 @@ function printSupportMonth() {
   if (!u) return;
 
   var ym = currentSupportDate.substring(0, 7);
-  var wd = ["月","火","水","木","金","土","日"];
-
-  function row(ymd, idx) {
-    var s = loadSupport()[ymd + "|" + uid] || { note: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
-    var mealMark = function(v) { return (v === undefined || v === null) ? '' : (v ? '〇' : '×'); };
-    var activityTxt = s.activity ? (s.activity === "通所" ? "通所されている" : s.activity === "ホーム" ? "ホームで過ごされている" : "") : "";
-    if (s.activityOther) activityTxt = s.activityOther;
-    return '<div class="supday"><p class="supday-head">' + wd[idx] + '（' + Number(ymd.split("-")[1]) + "/" + Number(ymd.split("-")[2]) + '）　記入者：' + escapeHtml(s.author) + '</p>' +
-      '<div class="supday-main"><p class="supday-label">本日の様子</p><p class="supday-body">' + escapeHtml(s.note).replace(/\n/g,"<br>") + '</p></div>' +
-      '<div class="supday-summary">' +
-      '<span class="sup-box"><span class="supday-label">健康状態</span><br><span class="supday-body">' + escapeHtml(s.health) + '</span></span>' +
-      '<span class="sup-box"><span class="supday-label">食事</span><br><span class="supday-body">昼（' + mealMark(s.mealLunch) + '）夕（' + mealMark(s.mealDinner) + '）朝（' + mealMark(s.mealBreakfast) + '）</span></span>' +
-      '<span class="sup-box"><span class="supday-label">昼間の活動</span><br><span class="supday-body">' + escapeHtml(activityTxt) + '</span></span>' +
-      '</div></div>';
-  }
 
   // 月内の日を取得し、実際の週（月〜日）で分割
   var ymParts = ym.split("-");
@@ -1881,7 +2022,6 @@ function printSupportMonth() {
   var current = new Date(firstDay);
   var dow = current.getDay();
   current.setDate(current.getDate() - (dow === 0 ? 6 : dow - 1)); // 月曜起点
-  var weekIdx = 0;
   while (current <= lastDay) {
     var weekRows = [];
     for (var i = 0; i < 7; i++) {
@@ -1896,20 +2036,18 @@ function printSupportMonth() {
       // 週を月〜木（page1）と金〜日（page2）に分ける
       var p1 = weekRows.slice(0, 4);
       var p2 = weekRows.slice(4);
-      var title1 = '【共同生活援助 SUUMORE TSUCHIURA 個別支援記録】';
-      var title2 = '【共同生活援助 SUUMORE TSUCHIURA 個別支援記録（続き）】';
       var page1 = '<div class="sheet">';
-      page1 += '<h2>' + title1 + '</h2>';
-      page1 += '<p class="person-line" style="text-align:center">氏名：' + escapeHtml(u.name) + '　' + Number(ymParts[1]) + "月</p>";
-      p1.forEach(function(rw){ page1 += row(rw.ymd, rw.idx); });
+      page1 += pDocHead("個別支援記録");
+      page1 += pPerson('氏名：' + underline(escapeHtml(u.name)) + '　対象月：' + eraYM(ym));
+      p1.forEach(function(rw){ page1 += supportRowHTML(rw.ymd, rw.idx, uid); });
       page1 += '</div>';
       html += page1;
       if (p2.length > 0) { // 月内に残り日がある週だけ続きページを作る（空ページ防止）
         var page2 = '<div class="sheet">';
-        page2 += '<h2>' + title2 + '</h2>';
-        page2 += '<p class="person-line" style="text-align:center">氏名：' + escapeHtml(u.name) + '　' + Number(ymParts[1]) + "月</p>";
-        p2.forEach(function(rw){ page2 += row(rw.ymd, rw.idx); });
-        page2 += '<div class="supday"><p class="supday-head">特記・連絡</p><div class="supday-main" style="min-height:40mm"><p class="supday-body">&nbsp;</p></div></div>';
+        page2 += pDocHead("個別支援記録（続き）");
+        page2 += pPerson('氏名：' + underline(escapeHtml(u.name)) + '　対象月：' + eraYM(ym));
+        p2.forEach(function(rw){ page2 += supportRowHTML(rw.ymd, rw.idx, uid); });
+        page2 += supportNoteBox();
         page2 += '</div>';
         html += page2;
       }
@@ -1917,7 +2055,7 @@ function printSupportMonth() {
     current.setDate(current.getDate() + 7);
   }
 
-  document.getElementById("print-daily-container").innerHTML = html;
+  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
 }
@@ -2194,30 +2332,34 @@ function printIncident(id) {
   var respTxt = (r.responseSel && r.responseSel.length ? r.responseSel.join("・") : "");
   if (r.responseNote) respTxt = respTxt + "\n" + r.responseNote;
   var html = '<div class="sheet incident-print">';
-  html += '<h2>【共同生活援助 SUUMORE TSUCHIURA　' + typeLabel + '】</h2>';
+  html += pDocHead(typeLabel);
+  html += pPerson('発生日時：' + ymdLabel(r.date) + (r.time ? "　" + r.time : "") +
+    (r.reportDate ? '　報告日：' + ymdLabel(r.reportDate) : ''));
 
-  function row(label, value, h) {
-    return '<tr><th>' + label + '</th><td' + (h ? ' style="min-height:' + h + '"' : '') + '>' + (value ? escapeHtml(value).replace(/\n/g, "<br>") : "&nbsp;") + '</td></tr>';
+  function row(label, value, minH) {
+    return '<tr><th>' + label + '</th><td' + (minH ? ' style="min-height:' + minH + '"' : '') + '>' +
+      (value ? escapeHtml(value).replace(/\n/g, "<br>") : "&nbsp;") + '</td></tr>';
   }
 
   html += '<table class="print-table"><tbody>';
   html += row("種別", r.type === "アクシデント" ? "アクシデント（事故）" : "ヒヤリハット");
-  html += row("発生日時", (r.date || "") + (r.time ? "　" + r.time : ""));
-  html += row("場所", places);
-  html += row("何がおきたか", cats);
+  html += row("発生場所", places);
+  html += row("内容の分類", cats);
   html += row("当事者（利用者）", users);
   html += row("当事者（職員）", staffs);
-  html += row("発生内容", r.content, "60px");
-  html += row("対応・処置", respTxt, "45px");
-  html += row("原因・背景", r.cause, "45px");
-  html += row("再発防止策", r.prevention, "45px");
-  html += row("報告者", r.reporter || "", "");
-  html += row("報告日", r.reportDate || "", "");
-  html += row("確認者", r.checker || "", "");
+  html += row("発生内容", r.content, "22mm");
+  html += row("対応・処置", respTxt, "14mm");
+  html += row("原因・背景", r.cause, "14mm");
+  html += row("再発防止策", r.prevention, "14mm");
   html += '</tbody></table>';
+
+  html += '<div class="p-confirm">' +
+    pSign("報告者（記入・押印）", r.reporter ? [r.reporter] : []) +
+    pSign("管理者確認（押印）", r.checker ? [r.checker] : []) +
+    '</div>';
   html += '</div>';
 
-  document.getElementById("print-daily-container").innerHTML = html;
+  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
 }
@@ -2363,12 +2505,17 @@ function printSummary() {
   var m = manual[key] || {};
   var days = monthDays(currentSummaryYM);
 
-  var html = '<div class="sheet"><h2>【共同生活援助 SUUMORE TSUCHIURA サービス提供実績記録票】</h2>';
-  html += '<p class="person-line" style="text-align:center">' + currentSummaryYM.split("-")[0] + "年" + Number(currentSummaryYM.split("-")[1]) + "月　氏名：" + escapeHtml(u ? u.name : "") + (u && u.status === "退去" ? "（退去）" : "") + '</p>';
+  var html = '<div class="sheet"><div class="p-doc-head">' +
+    '<div class="p-outdate">出力日：' + printOutDate() + '</div>' +
+    '<div class="p-facility">' + FACILITY_NAME + '</div>' +
+    '<div class="p-title">サービス提供実績記録票</div></div>';
+  html += pPerson('氏名：' + underline(escapeHtml(u ? u.name : "")) + (u && u.status === "退去" ? "（退去）" : "") + '　　対象期間：' + eraYM(currentSummaryYM));
   html += '<table class="print-table summary-table"><thead><tr><th>日付</th><th>曜日</th><th>利用</th>';
   kasan.forEach(function(k){ html += '<th>' + escapeHtml(k) + '</th>'; });
   html += '<th>備考</th></tr></thead><tbody>';
   var useCount = 0;
+  var kasanCounts = [];
+  kasan.forEach(function(){ kasanCounts.push(0); });
   for (var d = 1; d <= days; d++) {
     var ymd = currentSummaryYM + "-" + pad(d);
     var rec = m[ymd] || {};
@@ -2377,13 +2524,20 @@ function printSummary() {
     if (useChecked) useCount++;
     html += '<tr><td>' + d + '</td><td>' + wk + '</td>';
     html += '<td>' + (useChecked ? '○' : '') + '</td>';
-    kasan.forEach(function(k, ki){ html += '<td>' + (rec["k"+ki] ? '○' : '') + '</td>'; });
+    kasan.forEach(function(k, ki) {
+      if (rec["k" + ki]) kasanCounts[ki]++;
+      html += '<td>' + (rec["k" + ki] ? '○' : '') + '</td>';
+    });
     html += '<td>' + escapeHtml(rec.note || "") + '</td></tr>';
   }
+  html += '<tr class="p-total"><td colspan="2">月間合計</td><td>' + useCount + '日</td>';
+  kasan.forEach(function(k, ki) { html += '<td>' + kasanCounts[ki] + '日</td>'; });
+  html += '<td></td></tr>';
   html += '</tbody></table>';
-  html += '<p class="person-line">利用日数合計：' + useCount + ' 日</p>';
+  html += pNote("※「利用」はサービス提供を行った日、各加算欄は該当する加算要件を満たした日に○を付けています。");
+  html += '<div class="p-confirm">' + pSign("事業所管理者確認", []) + '</div>';
   html += '</div>';
-  document.getElementById("print-daily-container").innerHTML = html;
+  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
 }
