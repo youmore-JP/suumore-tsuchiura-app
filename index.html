@@ -404,17 +404,28 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 
   /* ===== 事故報告書 ===== */
   .incident-print { padding: 0; border: none; box-sizing: border-box; }
-  .incident-print table.print-table { font-size: 10pt; }
+  .incident-print table.print-table {
+    font-size: 10pt; line-height: 1.6;
+    page-break-inside: avoid;
+  }
+  .incident-print table.print-table th:nth-child(1) { width: 22%; }
+  .incident-print table.print-table td:nth-child(2) { width: 78%; }
   .incident-print table.print-table th,
   .incident-print table.print-table td {
-    padding: 2mm 3mm; text-align: left; vertical-align: top; line-height: 1.7;
+    padding: 1.8mm 2.6mm; text-align: left; vertical-align: top;
+    border: 0.8pt solid #222; word-break: break-word;
   }
   .incident-print table.print-table th {
-    width: 26%;
+    width: 20%;
     font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
-    font-size: 9.5pt; text-align: center; vertical-align: middle;
-    background: #f2f4f7;
+    font-size: 9pt; font-weight: 700;
+    text-align: center; vertical-align: top;
+    background: #f2f4f7; padding: 1.8mm 2mm;
   }
+  .incident-print table.print-table td { overflow: visible; }
+  /* 確認欄をテーブルと同じ幅に揃えてデータ欄を強調 */
+  .incident-print .p-confirm { justify-content: space-between; }
+  .incident-print .p-confirm-box { flex: 1; width: auto; }
 
   /* ===== 確認欄・ページフッター ===== */
   .p-confirm { display: flex; gap: 4mm; justify-content: flex-end; margin-top: 3mm; page-break-inside: avoid; }
@@ -1054,8 +1065,8 @@ function pLine(label, val, minH) {
 function pSign(label, names) {
   var n = (names || []).join("・");
   return '<div class="p-confirm-box"><div class="p-confirm-label">' + label + '</div>' +
-    '<div class="p-line2">氏名：' + (n ? underline(escapeHtml(n)) : '&nbsp;') + '</div>' +
-    '<div class="p-line2">押印：（　）</div>' +
+    '<div class="p-line2">氏名：' + (n ? underline(escapeHtml(n)) : '<span class="u-line">&nbsp;</span>') + '</div>' +
+    '<div class="p-line2">押印：（　　　　）</div>' +
     '</div>';
 }
 function pFooter() {
@@ -2347,9 +2358,9 @@ function printIncident(id) {
   html += row("内容の分類", cats);
   html += row("当事者（利用者）", users);
   html += row("当事者（職員）", staffs);
-  html += row("発生内容", r.content, "22mm");
-  html += row("対応・処置", respTxt, "14mm");
-  html += row("原因・背景", r.cause, "14mm");
+  html += row("発生内容", r.content, "14mm");
+  html += row("対応・処置", respTxt, "10mm");
+  html += row("原因・背景", r.cause, "10mm");
   html += row("再発防止策", r.prevention, "14mm");
   html += '</tbody></table>';
 
