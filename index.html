@@ -313,6 +313,11 @@ table.daily-status-table th:first-child, table.daily-status-table td:first-child
 }
 table.daily-status-table td:first-child { background: #fff; }
 table.daily-status-table thead th:first-child { background: #eef1f5; }
+/* 利用者状況を2表に分割：タブレットで横スライドせず確認できるよう各表はコンテナ幅に収める */
+.user-status-sub { font-size: 13px; font-weight: 600; color: #1a73e8; margin: 0 0 2px; }
+table.daily-status-table + .user-status-sub { margin-top: 14px; }
+.daily-section table.daily-table.daily-status-table { min-width: 100%; }
+.daily-status-table th, .daily-status-table td { padding: 5px 6px; }
 .daily-count-input { width: 64px; padding: 8px 4px; font-size: 15px; text-align: center; border: 1px solid #d9e0e8; border-radius: 8px; }
 .daily-count-input select, select.daily-count-input { -webkit-appearance: none; appearance: none; }
 .daily-table .opt-btn {
@@ -2090,11 +2095,26 @@ function renderDailyStayOutLine() {
 }
 
 // 利用者状況の表を作る（表示列設定に従う）
+// タブレットで横スライドせず全部チェックできるよう2段に分割：
+// 利用者状況1 = 体温・食事、利用者状況2 = 服薬・お風呂・洗濯・外泊（各表に氏名を併記）
 function buildUserStatusTable(users, us) {
   var ucols = loadUserCols();
+  var medIdx = -1;
+  USER_COL_DEFS.forEach(function(c, i){ if (c.id === "medLunch") medIdx = i; });
+  var g1 = [], g2 = [];
+  USER_COL_DEFS.forEach(function(c, i){ if (ucols.indexOf(c.id) >= 0) (i < medIdx ? g1 : g2).push(c.id); });
+  var html = '';
+  if (g1.length) html += buildStatusTable(users, us, g1, 'g1', '利用者状況1（体温・食事）');
+  if (g2.length) html += buildStatusTable(users, us, g2, 'g2', '利用者状況2（服薬・お風呂・洗濯・外泊）');
+  return html;
+}
+
+// 1つの利用者状況表を組み立てる（列セットは呼び出し元で分割済み）
+function buildStatusTable(users, us, ucols, cls, label) {
   var thead = '<tr><th>氏名</th>';
   ucols.forEach(function(id){ thead += '<th>' + userColTitle(id) + '</th>'; });
-  var html = '<table class="daily-table daily-status-table"><thead>' + thead + '</tr></thead><tbody>';
+  var html = '<p class="user-status-sub">' + label + '</p>';
+  html += '<table class="daily-table daily-status-table daily-status-' + cls + '"><thead>' + thead + '</tr></thead><tbody>';
   users.forEach(function(u) {
     var st = us[u.id] || defaultUserStatus();
     html += '<tr><td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>';
@@ -2110,7 +2130,7 @@ function buildUserStatusTable(users, us) {
         var curV = (st[id] === undefined || st[id] === null) ? "" : String(st[id]);
         var opts = '<option value=""' + (curV === "" ? ' selected' : '') + '>−（未摂取）</option>';
         for (var i = 0; i <= 10; i++) opts += '<option value="' + i + '"' + (curV === String(i) ? ' selected' : '') + '>' + i + '</option>';
-        html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="' + id + '" style="width:98px">' + opts + '</select></td>';
+        html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="' + id + '" style="width:112px">' + opts + '</select></td>';
       } else {
         html += '<td><div class="opt-btn' + (st[id] ? ' selected' : '') + '" data-uid="' + u.id + '" data-f="' + id + '" onclick="toggleUserCheck(this)">✓</div></td>';
       }
