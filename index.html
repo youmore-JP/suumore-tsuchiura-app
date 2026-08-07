@@ -304,6 +304,15 @@ table.daily-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.daily-table th, table.daily-table td { border: 1px solid #ccc; padding: 6px 8px; text-align: center; }
 table.daily-table th { background: #eef1f5; }
 table.daily-table th, table.daily-table td { white-space: nowrap; }
+/* 利用者状況の表：横スクロール時も氏名列を左端に固定して誰の行か分かるようにする */
+table.daily-status-table th:first-child, table.daily-status-table td:first-child {
+  position: -webkit-sticky; position: sticky; left: 0;
+  z-index: 3;
+  box-shadow: 1px 0 0 rgba(0,0,0,0.06);
+  text-align: left;
+}
+table.daily-status-table td:first-child { background: #fff; }
+table.daily-status-table thead th:first-child { background: #eef1f5; }
 .daily-count-input { width: 64px; padding: 8px 4px; font-size: 15px; text-align: center; border: 1px solid #d9e0e8; border-radius: 8px; }
 .daily-count-input select, select.daily-count-input { -webkit-appearance: none; appearance: none; }
 .daily-table .opt-btn {
@@ -1680,7 +1689,7 @@ function buildDailySheet(ymd) {
       var cells = '<td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>';
       ucols.forEach(function(id) {
         if (id === "temp") cells += '<td>' + (st.tempInt || 36) + '.' + (st.tempDec || 0) + '</td>';
-        else if (id.indexOf("eat") === 0) cells += '<td>' + (st[id] || 0) + '</td>';
+        else if (id.indexOf("eat") === 0) cells += '<td>' + (st[id] === "" || st[id] === undefined || st[id] === null ? '−' : st[id]) + '</td>';
         else cells += '<td>' + mk(st[id]) + '</td>';
       });
       html += '<tr>' + cells + '</tr>';
@@ -1841,9 +1850,12 @@ function defaultDailyData() {
   };
 }
 
-// 利用者ごとの初期状態
+// 利用者ごとの初期状態（平日の昼食は未提供のため「未摂取」、土日は提供予定なので10）
 function defaultUserStatus() {
-  return { medLunch: 0, medDinner: 0, medBreakfast: 0, bath: 0, laundry: 0, stayOut: 0, eatLunch: 10, eatDinner: 10, eatBreakfast: 10, tempInt: 36, tempDec: 0 };
+  var p = currentDaily.split("-");
+  var w = new Date(Number(p[0]), Number(p[1])-1, Number(p[2])).getDay();
+  var lunchDefault = (w === 0 || w === 6) ? 10 : "";
+  return { medLunch: 0, medDinner: 0, medBreakfast: 0, bath: 0, laundry: 0, stayOut: 0, eatLunch: lunchDefault, eatDinner: 10, eatBreakfast: 10, tempInt: 36, tempDec: 0 };
 }
 
 // ============ 利用者状況の表示列設定 ============
@@ -2082,7 +2094,7 @@ function buildUserStatusTable(users, us) {
   var ucols = loadUserCols();
   var thead = '<tr><th>氏名</th>';
   ucols.forEach(function(id){ thead += '<th>' + userColTitle(id) + '</th>'; });
-  var html = '<table class="daily-table"><thead>' + thead + '</tr></thead><tbody>';
+  var html = '<table class="daily-table daily-status-table"><thead>' + thead + '</tr></thead><tbody>';
   users.forEach(function(u) {
     var st = us[u.id] || defaultUserStatus();
     html += '<tr><td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>';
@@ -2095,9 +2107,10 @@ function buildUserStatusTable(users, us) {
         html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="tempInt" style="width:60px">' + tOpts + '</select>.' +
           '<select class="daily-count-input" data-uid="' + u.id + '" data-f="tempDec" style="width:60px">' + dOpts + '</select></td>';
       } else if (id.indexOf("eat") === 0) {
-        var opts = '';
-        for (var i = 0; i <= 10; i++) opts += '<option value="' + i + '"' + (Number(st[id]) === i ? ' selected' : '') + '>' + i + '</option>';
-        html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="' + id + '" style="width:60px">' + opts + '</select></td>';
+        var curV = (st[id] === undefined || st[id] === null) ? "" : String(st[id]);
+        var opts = '<option value=""' + (curV === "" ? ' selected' : '') + '>−（未摂取）</option>';
+        for (var i = 0; i <= 10; i++) opts += '<option value="' + i + '"' + (curV === String(i) ? ' selected' : '') + '>' + i + '</option>';
+        html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="' + id + '" style="width:98px">' + opts + '</select></td>';
       } else {
         html += '<td><div class="opt-btn' + (st[id] ? ' selected' : '') + '" data-uid="' + u.id + '" data-f="' + id + '" onclick="toggleUserCheck(this)">✓</div></td>';
       }
@@ -2130,7 +2143,11 @@ function refreshDailyStatusTable() {
       var el = document.querySelector('#userStatusTable .opt-btn[data-uid="' + u.id + '"][data-f="' + f + '"]');
       if (el) st[f] = el.classList.contains("selected") ? 1 : 0;
     });
-    ["eatLunch", "eatDinner", "eatBreakfast", "tempInt", "tempDec"].forEach(function(f) {
+    ["eatLunch", "eatDinner", "eatBreakfast"].forEach(function(f) {
+      var el = document.querySelector('#userStatusTable select[data-uid="' + u.id + '"][data-f="' + f + '"]');
+      if (el) st[f] = el.value === "" ? "" : Number(el.value);
+    });
+    ["tempInt", "tempDec"].forEach(function(f) {
       var el = document.querySelector('#userStatusTable select[data-uid="' + u.id + '"][data-f="' + f + '"]');
       if (el) st[f] = Number(el.value);
     });
@@ -2196,7 +2213,7 @@ function collectDailyForm(d) {
     });
     eatFields.forEach(function(f) {
       var el = document.querySelector('#dailyForm select[data-uid="' + u.id + '"][data-f="' + f + '"]');
-      if (el) st[f] = parseInt(el.value, 10) || 0;
+      if (el) st[f] = el.value === "" ? "" : (parseInt(el.value, 10) || 0);
     });
     tempFields.forEach(function(f) {
       var el = document.querySelector('#dailyForm select[data-uid="' + u.id + '"][data-f="' + f + '"]');
