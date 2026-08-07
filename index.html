@@ -124,7 +124,32 @@ header p { font-size: 12px; opacity: .9; margin-top: 2px; }
   margin-top: 10px;
 }
 
+/* トースト通知（打刻結果などの控えめな通知用） */
+.toast {
+  position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%);
+  background: rgba(25,25,25,.93); color: #fff; padding: 11px 24px; border-radius: 999px;
+  font-size: 14px; line-height: 1.5; z-index: 300; max-width: 88%; text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,.28); display: none;
+}
+.toast-success { background: #1a73e8; }
+.toast-error { background: #c62828; }
+
+/* 時刻・休憩 修正モーダル */
+.edit-modal-label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.edit-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.opt-btn.edit-chip { flex: 0 0 auto; min-width: 64px; padding: 10px 8px; font-size: 13px; border-radius: 8px; }
+.opt-btn.edit-chip.selected { border-color: #1a73e8; background: #e8f0fe; color: #1a73e8; }
+
+/* 実績記録表：外泊日バッジ */
+.stay-badge { background: #fdecea !important; color: #b3261e !important; font-weight: 700; font-size: 12px; }
+
+/* バックアップ未実行・経過警告 */
+.notice.warn-danger { background: #fdecea; border-color: #f0b4ac; color: #b3261e; }
+
 /* パスワード */
+
+/* 印刷・画面で表示される外泊の注記 */
+.stay-out-msg { text-align: left !important; font-size: 12px; color: #b3261e; }
 .pw-screen { text-align: center; padding: 40px 20px; }
 .pw-screen h2 { font-size: 18px; margin-bottom: 20px; }
 .pw-input {
@@ -280,9 +305,6 @@ table.daily-table th, table.daily-table td { white-space: nowrap; }
   flex: 1; min-height: 26px; padding: 2px 8px;
   border-bottom: 1px solid #ccc; font-size: 13px; line-height: 1.7;
 }
-.p-confirm { display: flex; gap: 12px; justify-content: flex-end; margin-top: 14px; }
-.p-confirm-box { width: 260px; border: 1px solid #333; padding: 10px 12px; font-size: 12px; }
-.p-confirm-label { font-size: 11px; font-weight: 700; border-bottom: 1px solid #999; padding-bottom: 4px; margin-bottom: 6px; }
 .bl { display: inline-block; min-width: 48px; height: 16px; border-bottom: 1px solid #333; vertical-align: bottom; }
 tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700; }
 
@@ -347,6 +369,8 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     font-size: 8.5pt; font-weight: 700;
     background: #f2f4f7; border-bottom: 1.2pt solid #222;
   }
+  /* 表が複数ページにまたがる場合も見出し行を各ページに繰り返す */
+  table.print-table thead { display: table-header-group; }
   table.print-table tbody tr { page-break-inside: avoid; }
   table.print-table tr.p-total td, table.print-table tr.p-total th {
     background: #f2f4f7 !important; font-weight: 700; border-top: 1.2pt solid #222;
@@ -358,9 +382,18 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
   table.print-table th:nth-child(4), table.print-table td:nth-child(4) { width: 18%; }
   table.print-table th:nth-child(5), table.print-table td:nth-child(5) { width: 15%; }
   table.print-table th:nth-child(6), table.print-table td:nth-child(6) { width: 28%; }
-  /* 業務日誌の利用者状況表（10列） */
-  table.user-table th:nth-child(1), table.user-table td:nth-child(1) { width: 24%; }
-  table.user-table th:nth-child(2), table.user-table td:nth-child(2) { width: 11%; }
+  /* 業務日誌の利用者状況表（11列: 氏名・体温・食事×3・服薬×3・お風呂・洗濯・外泊) */
+  table.user-table th:nth-child(1), table.user-table td:nth-child(1) { width: 16%; }
+  table.user-table th:nth-child(2), table.user-table td:nth-child(2) { width: 8%; }
+  table.user-table th:nth-child(3), table.user-table td:nth-child(3) { width: 8%; }
+  table.user-table th:nth-child(4), table.user-table td:nth-child(4) { width: 8%; }
+  table.user-table th:nth-child(5), table.user-table td:nth-child(5) { width: 8%; }
+  table.user-table th:nth-child(6), table.user-table td:nth-child(6) { width: 8%; }
+  table.user-table th:nth-child(7), table.user-table td:nth-child(7) { width: 8%; }
+  table.user-table th:nth-child(8), table.user-table td:nth-child(8) { width: 8%; }
+  table.user-table th:nth-child(9), table.user-table td:nth-child(9) { width: 8%; }
+  table.user-table th:nth-child(10), table.user-table td:nth-child(10) { width: 8%; }
+  table.user-table th:nth-child(11), table.user-table td:nth-child(11) { width: 12%; }
   /* 実績記録票（加算の列数は可変なので自動レイアウト） */
   .sheet table.print-table.summary-table { table-layout: auto; }
   .sheet table.print-table.summary-table th, .sheet table.print-table.summary-table td { overflow: visible; }
@@ -421,19 +454,8 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     background: #f2f4f7; padding: 1.8mm 2mm;
   }
   .incident-print table.print-table td { overflow: visible; }
-  /* 確認欄をテーブルと同じ幅に揃えてデータ欄を強調 */
-  .incident-print .p-confirm { justify-content: space-between; }
-  .incident-print .p-confirm-box { flex: 1; width: auto; }
 
-  /* ===== 確認欄・ページフッター ===== */
-  .p-confirm { display: flex; gap: 4mm; justify-content: flex-end; margin-top: 3mm; page-break-inside: avoid; }
-  .p-confirm-box { width: 66mm; border: 0.8pt solid #333; padding: 1.6mm 2.5mm; font-size: 9pt; }
-  .p-confirm-label {
-    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
-    font-size: 8pt; font-weight: 700;
-    border-bottom: 0.5pt solid #999; padding-bottom: 0.7mm; margin-bottom: 1.2mm;
-  }
-  .p-confirm-box .p-line2 { margin-top: 1mm; }
+  /* ===== ページフッター ===== */
   .bl { display: inline-block; min-width: 12mm; height: 3.2mm; border-bottom: 0.8pt solid #222; vertical-align: bottom; }
   .p-footer {
     position: fixed; left: 0; right: 0; bottom: 0;
@@ -463,6 +485,7 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     <div class="top-menu">
       <div class="menu-card" onclick="showScreen('screen-daily')"><h3>日誌</h3><p>業務日誌の記録・入力</p></div>
       <div class="menu-card" onclick="showScreen('screen-support')"><h3>記録</h3><p>個別支援記録の入力</p></div>
+      <div class="menu-card" onclick="showScreen('screen-incident')"><h3>報告書</h3><p>ヒヤリハット・事故報告</p></div>
     </div>
     <div id="todayLine" class="notice"></div>
     <div id="nameList" class="name-list"></div>
@@ -484,6 +507,7 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 <div id="screen-manage-menu" class="screen">
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-main')">← 打刻画面へ</button>
+    <div id="backupWarn"></div>
     <div class="menu-grid">
       <div class="menu-card" onclick="showScreen('screen-records')"><h3>職員勤退表</h3><p>確認・修正・印刷</p></div>
       <div class="menu-card" onclick="showScreen('screen-staff')"><h3>職員管理</h3><p>職員の追加・削除</p></div>
@@ -617,6 +641,7 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 <!-- ===== ヒヤリハット・事故報告 一覧 ===== -->
 <div id="screen-incident" class="screen">
   <div class="container">
+    <button class="back-btn" onclick="showScreen('screen-main')">← トップへ</button>
     <button class="back-btn" onclick="showScreen('screen-daily')">← 業務日誌へ</button>
     <button class="back-btn" onclick="showScreen('screen-manage-menu')">← 管理者メニューへ</button>
     <h2>ヒヤリハット・事故報告書</h2>
@@ -645,9 +670,10 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
       <span class="ym" id="exportYM"></span>
       <button onclick="changeMonthExport(1)">次月 ▶</button>
     </div>
-    <div class="opt-row" style="max-width:400px;margin:0 auto 16px;">
+    <div class="opt-row" style="max-width:600px;margin:0 auto 16px;">
       <div class="opt-btn selected" data-etype="record" onclick="selectExportType(this)">職員勤退表</div>
       <div class="opt-btn" data-etype="daily" onclick="selectExportType(this)">業務日誌</div>
+      <div class="opt-btn" data-etype="summary" onclick="selectExportType(this)">実績記録表（全利用者）</div>
     </div>
     <button class="save-btn" onclick="doPrint()">印刷 / PDF保存</button>
     <div id="exportList"></div>
@@ -695,6 +721,28 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     </div>
     <p id="modalStatus"></p>
     <button class="close-btn" onclick="closeModal()">閉じる</button>
+  </div>
+</div>
+
+<!-- ===== 時刻・休憩 修正モーダル ===== -->
+<div id="edit-modal-back" class="modal-back" onclick="if (event.target === this) closeEditModal()">
+  <div class="modal">
+    <h2 id="editModalTitle">編集</h2>
+    <p class="person" id="editModalDesc"></p>
+    <div id="editModalBody"></div>
+    <button class="close-btn" onclick="closeEditModal()">キャンセル</button>
+  </div>
+</div>
+
+<!-- ===== パスワード確認モーダル（削除などの権限確認用） ===== -->
+<div id="pw-modal-back" class="modal-back" onclick="if (event.target === this) closePwModal()">
+  <div class="modal">
+    <h2 id="pwModalTitle">確認</h2>
+    <p class="person" id="pwModalMsg"></p>
+    <input id="pwModalInput" class="pw-input" type="password" inputmode="numeric" style="width:100%;font-size:20px" onkeydown="if (event.key === 'Enter') submitPwModal()">
+    <button type="button" class="big-btn btn-in" style="width:100%;margin-top:12px" onclick="submitPwModal()">確定</button>
+    <p class="pw-err" id="pwModalErr"></p>
+    <button class="close-btn" onclick="closePwModal()">キャンセル</button>
   </div>
 </div>
 
@@ -746,12 +794,29 @@ function todayStr() {
 }
 function pad(n) { return String(n).padStart(2,"0"); }
 
+var toastTimer = null;
+function showToast(msg, isError) {
+  var el = document.getElementById("toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.className = "toast" + (isError ? " toast-error" : " toast-success");
+  el.style.display = "block";
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.style.display = "none"; }, 2600);
+}
+
 // ============ 画面遷移 ============
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
   document.getElementById(id).classList.add("active");
   window.scrollTo(0, 0);
   if (id === "screen-main") renderNameList();
+  if (id === "screen-manage-menu") renderBackupWarn();
   if (id === "screen-records") renderRecords();
   if (id === "screen-staff") renderStaff();
   if (id === "screen-user") renderUsers();
@@ -832,7 +897,7 @@ function saveStamp(kind) {
     // 二重出勤の防止（出勤打刻済みの場合は上書きしない）
     if (recs[key] && recs[key].in) {
       closeModal(); renderNameList();
-      alert(person.name + "さんはすでに出勤打刻済みです（" + recs[key].in + "）。\n退勤の打刻をしてください。修正は管理者の「実績表」で行えます。");
+      showToast(person.name + "さんはすでに出勤打刻済みです（" + recs[key].in + "）。退勤の打刻をしてください。修正は管理者の「実績表」で行えます。", true);
       return;
     }
     // 出勤後30時間以上経過しても退勤未打刻の場合は「退勤の打刻忘れ」と判断
@@ -853,7 +918,7 @@ function saveStamp(kind) {
       if (hoursPassed < 30) {
         // まだ30時間経過していない → 前日の勤務が未退勤の可能性（夜勤）→ 退勤を打つべきなので出勤をブロック
         closeModal(); renderNameList();
-        alert(person.name + "さんは" + openKeys[ck].key.split("|")[0] + " " + cr.in + " に出勤打刻済みで、まだ退勤されていません。\n退勤の打刻を先にお願いします。");
+        showToast(person.name + "さんは" + openKeys[ck].key.split("|")[0] + " " + cr.in + " に出勤打刻済みで、まだ退勤されていません。退勤の打刻を先にお願いします。", true);
         return;
       } else {
         // 30時間以上経過 → 退勤の打刻忘れと判断し、この日の記録はそのまま残す（自動記録はしない）。新しい出勤を許可
@@ -872,7 +937,7 @@ function saveStamp(kind) {
       saveRecords(recs);
       closeModal();
       renderNameList();
-      alert("退勤を記録しました（前日の勤務）：" + person.name + " " + time);
+      showToast("退勤を記録しました（前日の勤務）：" + person.name + " " + time);
       return;
     }
   }
@@ -886,7 +951,7 @@ function saveStamp(kind) {
   closeModal();
   renderNameList();
   var label = kind === "in" ? "出勤" : "退勤";
-  alert(label + "を記録しました：" + person.name + " " + time);
+  showToast(label + "を記録しました：" + person.name + " " + time);
 }
 
 // ============ 管理者 ============
@@ -1058,13 +1123,6 @@ function pLine(label, val, minH) {
     '<span class="p-val"' + (minH ? ' style="min-height:' + minH + '"' : '') + '>' + body + '</span>' +
     '</div>';
 }
-function pSign(label, names) {
-  var n = (names || []).join("・");
-  return '<div class="p-confirm-box"><div class="p-confirm-label">' + label + '</div>' +
-    '<div class="p-line2">氏名：' + (n ? underline(escapeHtml(n)) : '<span class="u-line">&nbsp;</span>') + '</div>' +
-    '<div class="p-line2">押印：（　　　　）</div>' +
-    '</div>';
-}
 function pFooter() {
   return '<div class="p-footer">' +
     '<span>' + FACILITY_NAME + '</span>' +
@@ -1133,50 +1191,104 @@ function buildSheet(person, ym) {
   html += '<tr class="p-total"><td colspan="5">月間勤務時間合計</td><td>' + minToHM(totalMin) + '</td></tr>';
   html += '</tbody></table>';
   html += pNote("※休憩時間は、夜勤（出勤13時以降・退勤翌4〜12時）3時間／日勤1時間で自動計上されます。個別に異なる場合は管理者画面から修正できます。");
-  html += '<div class="p-confirm">' + pSign("管理者確認", []) + pSign("従業者（本人）確認", []) + '</div>';
   html += '</div>';
   return html;
 }
+
+// ============ 時刻・休憩の修正モーダル ============
+var editTarget = null; // { key, field }
+
+function setEditBody(html) { document.getElementById("editModalBody").innerHTML = html; }
+function showEditModal() { document.getElementById("edit-modal-back").classList.add("active"); }
+function closeEditModal() { document.getElementById("edit-modal-back").classList.remove("active"); editTarget = null; }
 
 function editTime(key, field) {
   var recs = loadRecords();
   var r = recs[key];
   if (!r) return;
+  editTarget = { key: key, field: field };
   var cur = r[field] || "";
   var label = field === "in" ? "出勤" : "退勤";
-  var input = prompt(label + "時間を入力（例：09:00、17:30）\n現在：" + (cur || "未入力"), cur || "09:00");
-  if (input === null) return;
-  var v = input.trim();
-  if (v === "") {
-    r[field] = "";
-    saveRecords(recs);
-    renderRecords();
-    renderExport();
-    return;
-  }
-  var m = v.match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) { alert("HH:MM 形式で入力してください（例：09:00）"); return; }
-  var hh = Number(m[1]), mm = Number(m[2]);
-  if (hh > 23 || mm > 59) { alert("時刻が不正です（0〜23時・0〜59分で入力してください）"); return; }
-  r[field] = pad(hh) + ":" + pad(mm);
-  if (field === "out" && r.outForgot) r.outForgot = false; // 退勤を実入力したら「打刻忘れ」マーク解除
-  saveRecords(recs);
-  renderRecords();
-  renderExport();
+  document.getElementById("editModalTitle").textContent = label + "時刻の修正";
+  document.getElementById("editModalDesc").textContent = key.split("|")[0];
+  setEditBody(
+    '<label class="edit-modal-label">' + label + '時刻</label>' +
+    '<input type="time" id="editTimeInput" class="daily-count-input" style="width:100%;height:52px;font-size:20px" value="' + (cur || "09:00") + '">' +
+    '<div class="opt-row" style="margin-top:12px;gap:8px">' +
+    '<button type="button" class="big-btn btn-in" style="flex:1;padding:14px 0;font-size:16px" onclick="applyEditTime()">保存</button>' +
+    '<button type="button" class="btn-danger" style="flex:1;padding:14px 0;font-size:16px;margin-top:0" onclick="clearEditTime()">クリア</button>' +
+    '</div>'
+  );
+  showEditModal();
 }
 
 function editBreak(key) {
   var recs = loadRecords();
   var r = recs[key];
   if (!r) return;
+  editTarget = { key: key, field: "break" };
   var cur = (typeof r.break !== "undefined") ? Number(r.break) : 60;
-  var input = prompt("休憩時間を分で入力（例：60 = 1時間、30 = 30分、0 = なし）\n現在：" + cur + "分", String(cur));
-  if (input === null) return;
-  var v = parseInt(input, 10);
-  if (isNaN(v) || v < 0) { alert("0以上の数字で入力してください"); return; }
+  document.getElementById("editModalTitle").textContent = "休憩時間の修正";
+  document.getElementById("editModalDesc").textContent = key.split("|")[0];
+  var presets = [0, 30, 45, 60, 90, 120, 180];
+  var chips = "";
+  presets.forEach(function(v) {
+    chips += '<div class="opt-btn edit-chip' + (cur === v ? ' selected' : '') + '" data-bv="' + v + '" onclick="pickBreakPreset(this)">' + (v ? v + "分" : "なし") + '</div>';
+  });
+  setEditBody(
+    '<label class="edit-modal-label">よく使う時間から選ぶ</label>' +
+    '<div class="edit-chip-row">' + chips + '</div>' +
+    '<div style="margin-top:14px"><label class="edit-modal-label">または分単位で入力（0 = なし）</label>' +
+    '<input type="number" id="editBreakInput" class="daily-count-input" style="width:100%;height:52px;font-size:20px" min="0" max="600" step="5" value="' + cur + '">' +
+    '</div>' +
+    '<button type="button" class="big-btn btn-in" style="width:100%;margin-top:12px" onclick="applyEditBreak()">保存</button>'
+  );
+  showEditModal();
+}
+
+function pickBreakPreset(el) {
+  document.querySelectorAll('#editModalBody .opt-btn[data-bv]').forEach(function(b){ b.classList.remove("selected"); });
+  el.classList.add("selected");
+  document.getElementById("editBreakInput").value = el.dataset.bv;
+}
+
+function applyEditTime() {
+  if (!editTarget) return;
+  var recs = loadRecords();
+  var r = recs[editTarget.key];
+  if (!r) { closeEditModal(); return; }
+  var v = document.getElementById("editTimeInput").value;
+  if (v === "") r[editTarget.field] = "";
+  else r[editTarget.field] = v;
+  if (editTarget.field === "out" && r.outForgot) r.outForgot = false; // 退勤を実入力したら「打刻忘れ」マーク解除
+  saveRecords(recs);
+  closeEditModal();
+  renderRecords();
+  renderExport();
+}
+function clearEditTime() {
+  if (!editTarget) return;
+  var recs = loadRecords();
+  var r = recs[editTarget.key];
+  if (!r) { closeEditModal(); return; }
+  r[editTarget.field] = "";
+  if (editTarget.field === "out" && r.outForgot) r.outForgot = false;
+  saveRecords(recs);
+  closeEditModal();
+  renderRecords();
+  renderExport();
+}
+function applyEditBreak() {
+  if (!editTarget) return;
+  var recs = loadRecords();
+  var r = recs[editTarget.key];
+  if (!r) { closeEditModal(); return; }
+  var v = parseInt(document.getElementById("editBreakInput").value, 10);
+  if (isNaN(v) || v < 0) { showToast("0以上の数字で入力してください", true); return; }
   r.break = v;
   r.breakEdited = true; // 手動編集した値として固定する
   saveRecords(recs);
+  closeEditModal();
   renderRecords();
   renderExport();
 }
@@ -1226,25 +1338,26 @@ function renderExport() {
   var html = "";
   if (exportType === "record") {
     list.forEach(function(p) { html += buildSheet(p, currentYM); });
+  } else if (exportType === "summary") {
+    html = buildSummaryAllSheets(currentYM);
   } else {
     html = buildDailySheetsForMonth(currentYM);
   }
   document.getElementById("exportList").innerHTML = html;
 }
 function doPrint() {
+  var html = "";
   if (exportType === "daily") {
-    var html = buildDailySheetsForMonth(currentYM);
-    document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-    window.print();
-    document.getElementById("print-daily-container").innerHTML = "";
+    html = buildDailySheetsForMonth(currentYM);
+  } else if (exportType === "summary") {
+    html = buildSummaryAllSheets(currentYM);
   } else {
     var list = loadStaff();
-    var html = "";
     list.forEach(function(p) { html += buildSheet(p, currentYM); });
-    document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-    window.print();
-    document.getElementById("print-daily-container").innerHTML = "";
   }
+  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
+  window.print();
+  document.getElementById("print-daily-container").innerHTML = "";
 }
 
 function buildDailySheetsForMonth(ym) {
@@ -1281,21 +1394,26 @@ function buildDailySheet(ymd) {
   html += pDocHead("業務日誌");
   html += pPerson('対象日：' + dailyRangeLabel(ymd) + (d.author ? '　記入者：' + underline(escapeHtml(d.author)) : ''));
 
-  // １．利用者状況
+  // １．利用者状況（表示列は設定で変更可）
   html += '<div class="p-sec"><div class="p-sec-title">１．利用者状況</div>';
   var users = loadUsers(); // 過去日では退去者も表示する
   var us = d.userStatus || {};
   if (users.length === 0) {
     html += pLine("", "");
   } else {
-    html += '<table class="print-table user-table"><thead><tr><th>氏名</th><th>体温</th><th>食事・昼</th><th>食事・夕</th><th>食事・朝</th><th>服薬・昼</th><th>服薬・夕</th><th>服薬・朝</th><th>お風呂</th><th>洗濯</th></tr></thead><tbody>';
+    var ucols = loadUserCols();
+    var thead = '<th>氏名</th>';
+    ucols.forEach(function(id){ thead += '<th>' + userColTitle(id) + '</th>'; });
+    html += '<table class="print-table user-table"><thead><tr>' + thead + '</tr></thead><tbody>';
     users.forEach(function(u) {
       var st = us[u.id] || defaultUserStatus();
-      html += '<tr><td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>' +
-        '<td>' + (st.tempInt || 36) + '.' + (st.tempDec || 0) + '</td>' +
-        '<td>' + (st.eatLunch || 0) + '</td><td>' + (st.eatDinner || 0) + '</td><td>' + (st.eatBreakfast || 0) + '</td>' +
-        '<td>' + mk(st.medLunch) + '</td><td>' + mk(st.medDinner) + '</td><td>' + mk(st.medBreakfast) + '</td>' +
-        '<td>' + mk(st.bath) + '</td><td>' + mk(st.laundry) + '</td></tr>';
+      var cells = '<td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>';
+      ucols.forEach(function(id) {
+        if (id === "temp") cells += '<td>' + (st.tempInt || 36) + '.' + (st.tempDec || 0) + '</td>';
+        else if (id.indexOf("eat") === 0) cells += '<td>' + (st[id] || 0) + '</td>';
+        else cells += '<td>' + mk(st[id]) + '</td>';
+      });
+      html += '<tr>' + cells + '</tr>';
     });
     html += '</tbody></table>';
   }
@@ -1333,15 +1451,19 @@ function buildDailySheet(ymd) {
   if (incSum) reportHtml = incSum;
   if (incSum && d.report) reportHtml += "\n";
   if (d.report) reportHtml += d.report;
+  var stayOutNames = [];
+  users.forEach(function(u) {
+    var st = us[u.id] || defaultUserStatus();
+    if (st.stayOut) stayOutNames.push(u.name + "さん");
+  });
+  if (stayOutNames.length > 0) {
+    var soLine = "外泊：" + stayOutNames.join("・");
+    reportHtml = reportHtml ? soLine + "\n" + reportHtml : soLine;
+  }
   html += '<div class="p-sec"><div class="p-sec-title">６．報告・連絡事項</div>';
   html += pLine("", reportHtml, "10mm");
   html += '</div>';
 
-  html += '<div class="p-confirm">' +
-    pSign("日勤記入者", d.authorsDay || []) +
-    pSign("夜勤記入者", d.authorsNight || []) +
-    pSign("管理者確認", []) +
-    '</div>';
   html += '</div>';
   return html;
 }
@@ -1415,11 +1537,11 @@ function dailyFormDirty() {
   for (var j = 0; j < users.length; j++) {
     var u = users[j];
     var st = us[u.id] || defaultUserStatus();
-    var ckFields = ["medLunch", "medDinner", "medBreakfast", "bath", "laundry"];
+    var ckFields = ["medLunch", "medDinner", "medBreakfast", "bath", "laundry", "stayOut"];
     for (var k = 0; k < ckFields.length; k++) {
       var cel = document.querySelector('#dailyForm .opt-btn[data-uid="' + u.id + '"][data-f="' + ckFields[k] + '"]');
-      var cval = cel && cel.classList.contains("selected") ? 1 : 0;
-      if (cval !== (st[ckFields[k]] ? 1 : 0)) return true;
+      // 非表示の列は比較しない（保存済みの値は維持）
+      if (cel && (cel.classList.contains("selected") ? 1 : 0) !== (st[ckFields[k]] ? 1 : 0)) return true;
     }
     var eatFields = ["eatLunch", "eatDinner", "eatBreakfast", "tempInt", "tempDec"];
     for (var e = 0; e < eatFields.length; e++) {
@@ -1451,7 +1573,64 @@ function defaultDailyData() {
 
 // 利用者ごとの初期状態
 function defaultUserStatus() {
-  return { medLunch: 0, medDinner: 0, medBreakfast: 0, bath: 0, laundry: 0, eatLunch: 10, eatDinner: 10, eatBreakfast: 10, tempInt: 36, tempDec: 0 };
+  return { medLunch: 0, medDinner: 0, medBreakfast: 0, bath: 0, laundry: 0, stayOut: 0, eatLunch: 10, eatDinner: 10, eatBreakfast: 10, tempInt: 36, tempDec: 0 };
+}
+
+// ============ 利用者状況の表示列設定 ============
+var USER_COL_KEY = "sumore_uicols";
+var USER_COL_DEFS = [
+  { id: "temp", title: "体温" },
+  { id: "eatLunch", title: "食事・昼" },
+  { id: "eatDinner", title: "食事・夕" },
+  { id: "eatBreakfast", title: "食事・朝" },
+  { id: "medLunch", title: "服薬・昼" },
+  { id: "medDinner", title: "服薬・夕" },
+  { id: "medBreakfast", title: "服薬・朝" },
+  { id: "bath", title: "お風呂" },
+  { id: "laundry", title: "洗濯" },
+  { id: "stayOut", title: "外泊" }
+];
+function defaultUserCols() {
+  var all = [];
+  USER_COL_DEFS.forEach(function(c){ all.push(c.id); });
+  return all;
+}
+function loadUserCols() {
+  try {
+    var v = JSON.parse(localStorage.getItem(USER_COL_KEY));
+    if (v && v.length) {
+      // 登録されていない列は除去して安全な順序で返す
+      var out = [];
+      USER_COL_DEFS.forEach(function(c){ if (v.indexOf(c.id) >= 0) out.push(c.id); });
+      return out;
+    }
+  } catch(e) {}
+  return defaultUserCols();
+}
+function saveUserCols(arr) { localStorage.setItem(USER_COL_KEY, JSON.stringify(arr)); }
+function userColTitle(id) {
+  var t = "";
+  USER_COL_DEFS.forEach(function(c){ if (c.id === id) t = c.title; });
+  return t;
+}
+// 表示列の選択ボタン（業務日誌の利用者状況に表示）
+function renderUserColToggle() {
+  var el = document.getElementById("userColOptions");
+  if (!el) return "";
+  var cur = loadUserCols();
+  var html = "";
+  USER_COL_DEFS.forEach(function(c) {
+    html += '<div class="opt-btn edit-chip' + (cur.indexOf(c.id) >= 0 ? ' selected' : '') + '" data-col="' + c.id + '" onclick="toggleUserCol(this)">' + c.title + '</div>';
+  });
+  el.innerHTML = html;
+}
+function toggleUserCol(el) {
+  var id = el.dataset.col;
+  var cur = loadUserCols();
+  var i = cur.indexOf(id);
+  if (i >= 0) cur.splice(i, 1); else cur.push(id);
+  saveUserCols(cur);
+  refreshDailyStatusTable();
 }
 
 // 特記すべき業務内容を前日から引き継ぐ（前日に何も無ければさらに遡る。
@@ -1479,6 +1658,7 @@ var WORK_TEMPLATE = "・玉造和男さんの食事誤嚥防止\n" +
   "・21時以降は報告なく外出禁止";
 
 function renderDaily() {
+  userStatusDraft = null;
   document.getElementById("dailyDate").textContent = dailyRangeLabel(currentDaily);
   var list = loadStaff();
   var recs = loadRecords();
@@ -1545,40 +1725,11 @@ function renderDaily() {
   var users = loadUsers();
   var us = d.userStatus || {};
   html += '<div class="daily-section"><h3>利用者状況</h3>';
+  html += '<div class="opt-row" style="flex-wrap:wrap;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:#888;margin-right:4px">表示列：</span><div id="userColOptions" class="edit-chip-row"></div></div>';
   if (users.length === 0) {
     html += '<p class="small-note">利用者が登録されていません</p>';
   } else {
-    html += '<table class="daily-table"><thead><tr><th>氏名</th><th>体温</th><th>食事・昼</th><th>食事・夕</th><th>食事・朝</th><th>服薬・昼</th><th>服薬・夕</th><th>服薬・朝</th><th>お風呂</th><th>洗濯</th></tr></thead><tbody>';
-    users.forEach(function(u) {
-      var st = us[u.id] || defaultUserStatus();
-      function ch(f) { return st[f] ? ' selected' : ''; }
-      function ckbox(f) {
-        return '<td><div class="opt-btn' + ch(f) + '" data-uid="' + u.id + '" data-f="' + f + '" onclick="toggleUserCheck(this)">✓</div></td>';
-      }
-      function eatSel(f) {
-        var opts = '';
-        for (var i = 0; i <= 10; i++) {
-          opts += '<option value="' + i + '"' + (Number(st[f]) === i ? ' selected' : '') + '>' + i + '</option>';
-        }
-        return '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="' + f + '" style="width:60px">' + opts + '</select></td>';
-      }
-      // 体温：整数部（35-40）+ 小数部（0-9）
-      var tempIntOpts = '';
-      for (var t = 35; t <= 40; t++) {
-        tempIntOpts += '<option value="' + t + '"' + (Number(st.tempInt) === t ? ' selected' : '') + '>' + t + '</option>';
-      }
-      var tempDecOpts = '';
-      for (var d2 = 0; d2 <= 9; d2++) {
-        tempDecOpts += '<option value="' + d2 + '"' + (Number(st.tempDec) === d2 ? ' selected' : '') + '>' + d2 + '</option>';
-      }
-      html += '<tr><td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>' +
-        '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="tempInt" style="width:60px">' + tempIntOpts + '</select>.' +
-        '<select class="daily-count-input" data-uid="' + u.id + '" data-f="tempDec" style="width:60px">' + tempDecOpts + '</select></td>' +
-        eatSel('eatLunch') + eatSel('eatDinner') + eatSel('eatBreakfast') +
-        ckbox('medLunch') + ckbox('medDinner') + ckbox('medBreakfast') +
-        ckbox('bath') + ckbox('laundry') + '</tr>';
-    });
-    html += '</tbody></table>';
+    html += '<div id="userStatusTable">' + buildUserStatusTable(users, us) + '</div>';
   }
   html += '</div>';
 
@@ -1624,6 +1775,7 @@ function renderDaily() {
   html += '<div class="daily-section"><h3>報告・連絡事項</h3>';
   var incSum = incidentSummaryFor(currentDaily);
   if (incSum) html += '<p class="inc-note" style="margin-bottom:6px;">' + escapeHtml(incSum) + '</p>';
+  html += '<div id="reportStayOutLine" class="stay-out-msg" style="display:none;margin-bottom:6px"></div>';
   html += '<textarea id="reportText" rows="4">' + escapeHtml(d.report) + '</textarea></div>';
 
   html += '<button class="save-btn daily-action" onclick="saveDailyForm()">業務日誌を保存</button>';
@@ -1631,10 +1783,97 @@ function renderDaily() {
   html += '</div>';
 
   document.getElementById("dailyForm").innerHTML = html;
+  renderUserColToggle();
+  renderDailyStayOutLine();
+}
+
+// 外泊チェックの変更を即時に「報告・連絡事項」へ反映する
+function renderDailyStayOutLine() {
+  var el = document.getElementById("reportStayOutLine");
+  if (!el) return;
+  var users = loadUsers();
+  var names = [];
+  document.querySelectorAll('#dailyForm .opt-btn[data-f="stayOut"].selected').forEach(function(b) {
+    var uid = b.dataset.uid;
+    var nm = "";
+    users.forEach(function(u){ if (u.id === uid) nm = u.name + "さん"; });
+    if (nm) names.push(nm);
+  });
+  if (names.length) {
+    el.textContent = "外泊：" + names.join("・");
+    el.style.display = "block";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+// 利用者状況の表を作る（表示列設定に従う）
+function buildUserStatusTable(users, us) {
+  var ucols = loadUserCols();
+  var thead = '<tr><th>氏名</th>';
+  ucols.forEach(function(id){ thead += '<th>' + userColTitle(id) + '</th>'; });
+  var html = '<table class="daily-table"><thead>' + thead + '</tr></thead><tbody>';
+  users.forEach(function(u) {
+    var st = us[u.id] || defaultUserStatus();
+    html += '<tr><td>' + escapeHtml(u.name) + (u.status === "退去" ? '（退去）' : '') + '</td>';
+    ucols.forEach(function(id) {
+      if (id === "temp") {
+        var tOpts = '';
+        for (var t = 35; t <= 40; t++) tOpts += '<option value="' + t + '"' + (Number(st.tempInt) === t ? ' selected' : '') + '>' + t + '</option>';
+        var dOpts = '';
+        for (var d2 = 0; d2 <= 9; d2++) dOpts += '<option value="' + d2 + '"' + (Number(st.tempDec) === d2 ? ' selected' : '') + '>' + d2 + '</option>';
+        html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="tempInt" style="width:60px">' + tOpts + '</select>.' +
+          '<select class="daily-count-input" data-uid="' + u.id + '" data-f="tempDec" style="width:60px">' + dOpts + '</select></td>';
+      } else if (id.indexOf("eat") === 0) {
+        var opts = '';
+        for (var i = 0; i <= 10; i++) opts += '<option value="' + i + '"' + (Number(st[id]) === i ? ' selected' : '') + '>' + i + '</option>';
+        html += '<td><select class="daily-count-input" data-uid="' + u.id + '" data-f="' + id + '" style="width:60px">' + opts + '</select></td>';
+      } else {
+        html += '<td><div class="opt-btn' + (st[id] ? ' selected' : '') + '" data-uid="' + u.id + '" data-f="' + id + '" onclick="toggleUserCheck(this)">✓</div></td>';
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
+}
+
+// 表示列の変更時に、現在フォーム上の未保存の入力値を保ったまま表を再描画する
+// （連続で列を変えても値が消えないよう、レンダリング中の状態を保持する）
+var userStatusDraft = null;
+
+function refreshDailyStatusTable() {
+  var wrap = document.getElementById("userStatusTable");
+  if (!wrap) return;
+  if (!userStatusDraft) {
+    var daily0 = loadDaily();
+    var d0 = daily0[currentDaily] || {};
+    userStatusDraft = {};
+    var src = d0.userStatus || {};
+    loadUsers().forEach(function(u){ userStatusDraft[u.id] = JSON.parse(JSON.stringify(src[u.id] || defaultUserStatus())); });
+  }
+  var us = userStatusDraft;
+  var users = loadUsers();
+  users.forEach(function(u) {
+    var st = us[u.id] || defaultUserStatus();
+    ["medLunch", "medDinner", "medBreakfast", "bath", "laundry", "stayOut"].forEach(function(f) {
+      var el = document.querySelector('#userStatusTable .opt-btn[data-uid="' + u.id + '"][data-f="' + f + '"]');
+      if (el) st[f] = el.classList.contains("selected") ? 1 : 0;
+    });
+    ["eatLunch", "eatDinner", "eatBreakfast", "tempInt", "tempDec"].forEach(function(f) {
+      var el = document.querySelector('#userStatusTable select[data-uid="' + u.id + '"][data-f="' + f + '"]');
+      if (el) st[f] = Number(el.value);
+    });
+    us[u.id] = st;
+  });
+  wrap.innerHTML = buildUserStatusTable(users, us);
+  renderUserColToggle();
+  renderDailyStayOutLine();
 }
 
 function toggleUserCheck(el) {
   el.classList.toggle("selected");
+  if (el.dataset.f === "stayOut") renderDailyStayOutLine();
 }
 
 function toggleRound(el) {
@@ -1676,22 +1915,23 @@ function collectDailyForm(d) {
   // 利用者ごとのチェックを保存
   var us = d.userStatus || {};
   var users = loadUsers(); // フォームに表示した全利用者（退去者含む）を保存
-  var fields = ["medLunch", "medDinner", "medBreakfast", "bath", "laundry"];
+  var fields = ["medLunch", "medDinner", "medBreakfast", "bath", "laundry", "stayOut"];
   var eatFields = ["eatLunch", "eatDinner", "eatBreakfast"];
   var tempFields = ["tempInt", "tempDec"];
   users.forEach(function(u) {
     var st = us[u.id] || defaultUserStatus();
     fields.forEach(function(f) {
       var el = document.querySelector('#dailyForm .opt-btn[data-uid="' + u.id + '"][data-f="' + f + '"]');
-      st[f] = el && el.classList.contains("selected") ? 1 : 0;
+      if (el) st[f] = el.classList.contains("selected") ? 1 : 0;
+      // 非表示の列は保存済みの値をそのまま維持する
     });
     eatFields.forEach(function(f) {
       var el = document.querySelector('#dailyForm select[data-uid="' + u.id + '"][data-f="' + f + '"]');
-      st[f] = el ? parseInt(el.value, 10) || 0 : 0;
+      if (el) st[f] = parseInt(el.value, 10) || 0;
     });
     tempFields.forEach(function(f) {
       var el = document.querySelector('#dailyForm select[data-uid="' + u.id + '"][data-f="' + f + '"]');
-      st[f] = el ? parseInt(el.value, 10) || 0 : 0;
+      if (el) st[f] = parseInt(el.value, 10) || 0;
     });
     us[u.id] = st;
   });
@@ -1705,7 +1945,8 @@ function saveDailyForm() {
   if (!daily[currentDaily]) daily[currentDaily] = {};
   collectDailyForm(daily[currentDaily]);
   saveDaily(daily);
-  alert("業務日誌を保存しました");
+  userStatusDraft = null;
+  showToast("業務日誌を保存しました");
 }
 
 function printDaily() {
@@ -1932,7 +2173,7 @@ function saveSupportForm() {
   rec.activityOther = document.getElementById("sActivityOther").value;
   support[key] = rec;
   saveSupport(support);
-  alert("個別支援記録を保存しました");
+  showToast("個別支援記録を保存しました");
 }
 
 function hasSupportSel(f) {
@@ -2121,6 +2362,7 @@ function setIncidentFormFrom(from) {
 
 function openIncidentForm(from) {
   currentIncidentId = null;
+  incidentDirtyFlag = false;
   setIncidentFormFrom(from);
   document.getElementById("incidentFormTitle").textContent = "新規報告書";
   renderIncidentForm();
@@ -2129,6 +2371,7 @@ function openIncidentForm(from) {
 
 function editIncident(id) {
   currentIncidentId = id;
+  incidentDirtyFlag = false;
   setIncidentFormFrom("list");
   var r = loadIncidents().find(function(x){ return x.id === id; }) || {};
   document.getElementById("incidentFormTitle").textContent = (r.type === "アクシデント" ? "事故報告書" : "ヒヤリハット報告書");
@@ -2313,23 +2556,55 @@ function saveIncident(andPrint) {
   }
   saveIncidents(list);
   currentIncidentId = currentIncidentId || data.id;
+  incidentDirtyFlag = false;
   if (andPrint) {
     var r = list.find(function(x){ return x.id === currentIncidentId; });
     printIncident(r.id);
   } else {
-    alert("報告書を保存しました");
+    showToast("報告書を保存しました");
   }
 }
 
+// パスワード確認モーダル（削除など権限が必要な操作の前に表示）
+var pwModalCallback = null;
+function openPwModal(title, msg, cb) {
+  pwModalCallback = cb;
+  document.getElementById("pwModalTitle").textContent = title;
+  document.getElementById("pwModalMsg").textContent = msg;
+  document.getElementById("pwModalInput").value = "";
+  document.getElementById("pwModalErr").textContent = "";
+  document.getElementById("pw-modal-back").classList.add("active");
+}
+function closePwModal() {
+  document.getElementById("pw-modal-back").classList.remove("active");
+  pwModalCallback = null;
+}
+function submitPwModal() {
+  var v = document.getElementById("pwModalInput").value;
+  var saved = localStorage.getItem(ADMIN_PW_KEY);
+  var ok = (saved !== null) ? (v === saved) : (PASSWORDS.indexOf(v) >= 0);
+  if (!ok) { document.getElementById("pwModalErr").textContent = "パスワードが違います"; return; }
+  var cb = pwModalCallback;
+  pwModalCallback = null;
+  closePwModal();
+  if (cb) cb();
+}
+
+// 事故報告の削除は管理者パスワードを要求（誤操作・悪意からの保護）
 function delIncident(id) {
-  if (!confirm("この報告書を削除しますか？")) return;
-  saveIncidents(loadIncidents().filter(function(x){ return x.id !== id; }));
-  renderIncidentList();
+  openPwModal("報告書の削除", "この報告書を削除します。管理者パスワードを入力してください。", function() {
+    saveIncidents(loadIncidents().filter(function(x){ return x.id !== id; }));
+    renderIncidentList();
+  });
 }
 
 function printIncident(id) {
   var r = loadIncidents().find(function(x){ return x.id === id; });
   if (!r) return;
+  // 原因・再発防止が未記入のままの印刷を防止（確認してから続行）
+  if (!(r.cause || "").trim() || !(r.prevention || "").trim()) {
+    if (!confirm("「原因・背景」または「再発防止策」が空欄です。\n管理者が後から記入できますが、このまま印刷しますか？")) return;
+  }
   var typeLabel = r.type === "アクシデント" ? "事故報告書" : "ヒヤリハット報告書";
   var users = (r.users && r.users.length) ? r.users.join("・") : (r.userName || "");
   var staffs = (r.staffs && r.staffs.length) ? r.staffs.join("・") : (r.staffName || "");
@@ -2359,10 +2634,6 @@ function printIncident(id) {
   html += row("再発防止策", r.prevention, "14mm");
   html += '</tbody></table>';
 
-  html += '<div class="p-confirm">' +
-    pSign("報告者（記入・押印）", r.reporter ? [r.reporter] : []) +
-    pSign("管理者確認（押印）", r.checker ? [r.checker] : []) +
-    '</div>';
   html += '</div>';
 
   document.getElementById("print-daily-container").innerHTML = pFooter() + html;
@@ -2417,6 +2688,7 @@ function renderSummary() {
   }
   var kasan = loadKasan();
   var manual = loadSummary();
+  var daily = loadDaily(); // 外泊は業務日誌のチェックから自動反映
   var key = currentSummaryYM + "|" + uid;
   var m = manual[key] || {};
   var days = monthDays(currentSummaryYM);
@@ -2425,31 +2697,48 @@ function renderSummary() {
   html += '<p class="daily-date">' + currentSummaryYM.split("-")[0] + "年" + Number(currentSummaryYM.split("-")[1]) + "月　氏名：" + escapeHtml((users.find(function(x){return x.id===uid;})||{}).name||"") + ( (users.find(function(x){return x.id===uid;})||{}).status === "退去" ? "（退去）" : "") + '</p>';
   html += '<div class="table-scroll"><table class="daily-table"><thead><tr><th>日付</th><th>曜日</th><th>利用</th>';
   kasan.forEach(function(k){ html += '<th>' + escapeHtml(k) + '</th>'; });
-  html += '<th>備考</th></tr></thead><tbody>';
-  for (var d = 1; d <= days; d++) {
+  html += '<th>外泊</th><th>備考</th></tr></thead><tbody>';
+for (var d = 1; d <= days; d++) {
     var ymd = currentSummaryYM + "-" + pad(d);
     var rec = m[ymd] || {};
     var wk = WEEK[new Date(Number(currentSummaryYM.split("-")[0]), Number(currentSummaryYM.split("-")[1])-1, d).getDay()];
     // 利用は該当日だけ手動でチェック（誤って外された日・入居前日などの過大計上を防ぐ）
     var useChecked = (rec.use !== undefined) ? rec.use : 0;
+    var dlSt = (daily[ymd] && daily[ymd].userStatus) ? daily[ymd].userStatus[uid] || null : null;
+    var stayOutChecked = !!(dlSt && dlSt.stayOut);
     html += '<tr><td>' + d + '</td><td>' + wk + '</td>';
-    html += '<td><div class="opt-btn' + (useChecked ? ' selected' : '') + '" data-k="use" data-d="' + d + '" onclick="toggleSummaryCheck(this)">✓</div></td>';
-    kasan.forEach(function(k, ki){
-      var field = "k" + ki;
-      html += '<td><div class="opt-btn' + (rec[field] ? ' selected' : '') + '" data-k="' + field + '" data-d="' + d + '" onclick="toggleSummaryCheck(this)">✓</div></td>';
-    });
+    if (stayOutChecked) {
+      // 外泊日は利用・加算を付けられない（業務日誌の外泊チェックと連動した自動判定）
+      var colspan = 2 + kasan.length; // 利用 + 加算 + 外泊
+      html += '<td colspan="' + colspan + '" class="stay-badge">外泊（ご利用なし）</td>';
+    } else {
+      html += '<td><div class="opt-btn' + (useChecked ? ' selected' : '') + '" data-k="use" data-d="' + d + '" onclick="toggleSummaryCheck(this)">✓</div></td>';
+      kasan.forEach(function(k, ki){
+        var field = "k" + ki;
+        html += '<td><div class="opt-btn' + (rec[field] ? ' selected' : '') + '" data-k="' + field + '" data-d="' + d + '" onclick="toggleSummaryCheck(this)">✓</div></td>';
+      });
+      html += '<td><div class="opt-btn" style="background:#eef1f5;color:#999">✓</div></td>';
+    }
     html += '<td><input class="daily-count-input" style="width:80px" type="text" value="' + escapeHtml(rec.note || "") + '" data-k="note" data-d="' + d + '" onchange="saveSummaryCell(this)"></td>';
     html += '</tr>';
   }
   html += '</tbody></table></div>';
-  html += '<p class="small-note" style="margin-top:8px">「利用」と加算の該当日に✓を付けてください（利用は未チェックが初期状態です）。</p>';
+  html += '<p class="small-note" style="margin-top:8px">「利用」と加算の該当日に✓を付けてください（利用は未チェックが初期状態です）。外泊は業務日誌の外泊チェックから自動で表示され、外泊日は利用・加算のチェックができません。</p>';
   html += '</div>';
   document.getElementById("summaryList").innerHTML = html;
 }
 
 function toggleSummaryCheck(el) {
-  el.classList.toggle("selected");
   var suid = document.getElementById("summaryUserSelect").value;
+  // 外泊日は利用・加算のチェックを不可にする（業務日誌と連動）
+  var ymd = currentSummaryYM + "-" + el.dataset.d;
+  var daily = loadDaily();
+  var dlSt = (daily[ymd] && daily[ymd].userStatus) ? daily[ymd].userStatus[suid] || null : null;
+  if (dlSt && dlSt.stayOut) {
+    showToast("外泊日のためチェックできません（業務日誌の「外泊」を外すと入力できます）", true);
+    return;
+  }
+  el.classList.toggle("selected");
   var key = currentSummaryYM + "|" + suid;
   var manual = loadSummary();
   if (!manual[key]) manual[key] = {};
@@ -2499,49 +2788,73 @@ function delKasan(name) {
   renderKasanList();
 }
 
-function printSummary() {
+// 実績記録表1枚分のHTMLを組み立て（単一印刷・全利用者一括印刷で共用）
+function buildSummarySheet(uid, ym) {
   var users = loadUsers(); // 退去者も過去月の印刷用に含める
-  var sel = document.getElementById("summaryUserSelect");
-  var uid = sel ? sel.value : "";
-  if (!uid) { alert("利用者を選択してください"); return; }
-  var u = users.find(function(x){ return x.id === uid; });
+  var u = null;
+  users.forEach(function(x){ if (x.id === uid) u = x; });
   var kasan = loadKasan();
   var manual = loadSummary();
-  var key = currentSummaryYM + "|" + uid;
+  var daily = loadDaily(); // 外泊は業務日誌のチェックから自動反映
+  var key = ym + "|" + uid;
   var m = manual[key] || {};
-  var days = monthDays(currentSummaryYM);
+  var days = monthDays(ym);
 
   var html = '<div class="sheet"><div class="p-doc-head">' +
     '<div class="p-facility">' + FACILITY_NAME + '</div>' +
     '<div class="p-title">サービス提供実績記録票</div></div>';
-  html += pPerson('氏名：' + underline(escapeHtml(u ? u.name : "")) + (u && u.status === "退去" ? "（退去）" : "") + '　　対象期間：' + eraYM(currentSummaryYM));
+  html += pPerson('氏名：' + underline(escapeHtml(u ? u.name : "")) + (u && u.status === "退去" ? "（退去）" : "") + '　　対象期間：' + eraYM(ym));
   html += '<table class="print-table summary-table"><thead><tr><th>日付</th><th>曜日</th><th>利用</th>';
   kasan.forEach(function(k){ html += '<th>' + escapeHtml(k) + '</th>'; });
-  html += '<th>備考</th></tr></thead><tbody>';
+  html += '<th>外泊</th><th>備考</th></tr></thead><tbody>';
   var useCount = 0;
+  var stayOutCount = 0;
   var kasanCounts = [];
   kasan.forEach(function(){ kasanCounts.push(0); });
   for (var d = 1; d <= days; d++) {
-    var ymd = currentSummaryYM + "-" + pad(d);
+    var ymd = ym + "-" + pad(d);
     var rec = m[ymd] || {};
-    var wk = WEEK[new Date(Number(currentSummaryYM.split("-")[0]), Number(currentSummaryYM.split("-")[1])-1, d).getDay()];
+    var wk = WEEK[new Date(Number(ym.split("-")[0]), Number(ym.split("-")[1])-1, d).getDay()];
     var useChecked = (rec.use !== undefined) ? rec.use : 0;
-    if (useChecked) useCount++;
+    var dlSt = (daily[ymd] && daily[ymd].userStatus) ? daily[ymd].userStatus[uid] || null : null;
+    var stayOutChecked = !!(dlSt && dlSt.stayOut);
+    // 外泊日は「利用」扱いにしない（業務日誌と連動した自動判定で二重計上を防ぐ）
+    var effectiveUse = useChecked && !stayOutChecked;
+    if (effectiveUse) useCount++;
+    if (stayOutChecked) stayOutCount++;
     html += '<tr><td>' + d + '</td><td>' + wk + '</td>';
-    html += '<td>' + (useChecked ? '○' : '') + '</td>';
+    html += '<td>' + (effectiveUse ? '○' : '') + '</td>';
     kasan.forEach(function(k, ki) {
-      if (rec["k" + ki]) kasanCounts[ki]++;
-      html += '<td>' + (rec["k" + ki] ? '○' : '') + '</td>';
+      var on = !!(rec["k" + ki]) && !stayOutChecked;
+      if (on) kasanCounts[ki]++;
+      html += '<td>' + (on ? '○' : '') + '</td>';
     });
+    html += '<td>' + (stayOutChecked ? '○' : '') + '</td>';
     html += '<td>' + escapeHtml(rec.note || "") + '</td></tr>';
   }
   html += '<tr class="p-total"><td colspan="2">月間合計</td><td>' + useCount + '日</td>';
   kasan.forEach(function(k, ki) { html += '<td>' + kasanCounts[ki] + '日</td>'; });
-  html += '<td></td></tr>';
+  html += '<td>' + stayOutCount + '日</td><td></td></tr>';
   html += '</tbody></table>';
-  html += pNote("※「利用」はサービス提供を行った日、各加算欄は該当する加算要件を満たした日に○を付けています。");
-  html += '<div class="p-confirm">' + pSign("事業所管理者確認", []) + '</div>';
+  html += pNote("※「利用」はサービス提供を行った日、各加算欄は該当する加算要件を満たした日に○を付けています。「外泊」は業務日誌の外泊チェックを自動反映し、外泊日は「利用」・加算の対象外です。");
   html += '</div>';
+  return html;
+}
+
+// 在籍中の全利用者の実績記録表をまとめて生成（一括印刷・一括プレビュー用）
+function buildSummaryAllSheets(ym) {
+  var users = loadUsers().filter(function(p){ return p.status !== "退去"; });
+  if (!users.length) return '<p class="notice">在籍している利用者がいません</p>';
+  var html = "";
+  users.forEach(function(u){ html += buildSummarySheet(u.id, ym); });
+  return html;
+}
+
+function printSummary() {
+  var sel = document.getElementById("summaryUserSelect");
+  var uid = sel ? sel.value : "";
+  if (!uid) { showToast("利用者を選択してください", true); return; }
+  var html = buildSummarySheet(uid, currentSummaryYM);
   document.getElementById("print-daily-container").innerHTML = pFooter() + html;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
@@ -2550,6 +2863,29 @@ function printSummary() {
 // ============ データバックアップ ============
 var BACKUP_KEYS = [STAFF_KEY, USER_KEY, RECORDS_KEY, DAILY_KEY, SUPPORT_KEY, INCIDENT_KEY, SUMMARY_KEY, KASAN_KEY];
 var BACKUP_MAGIC = "sumore-tsuchiura-backup";
+var LAST_BACKUP_KEY = "sumore_last_backup";
+
+// 最終バックアップからの経過日数を管理者メニューへ表示（未実施・長期放置の警告）
+function renderBackupWarn() {
+  var el = document.getElementById("backupWarn");
+  if (!el) return;
+  var iso = localStorage.getItem(LAST_BACKUP_KEY);
+  var d = iso ? new Date(iso) : null;
+  if (!d || isNaN(d.getTime())) {
+    el.textContent = "バックアップはまだ一度も実行されていません。大切なデータを守るため、今すぐ「データバックアップ」から書き出してください。";
+    el.className = "notice warn-danger";
+    return;
+  }
+  var days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  var dateStr = d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  if (days >= 14) {
+    el.textContent = "最終バックアップ：" + dateStr + "（" + (days <= 0 ? "今日" : days + "日前") + "）。14日以上経過しています。必ずバックアップを書き出してください。";
+    el.className = "notice warn-danger";
+  } else {
+    el.textContent = "最終バックアップ：" + dateStr + "（" + (days <= 0 ? "今日" : days + "日前") + "）";
+    el.className = "notice";
+  }
+}
 
 function exportBackup() {
   var data = { app: BACKUP_MAGIC, exported: new Date().toISOString() };
@@ -2557,6 +2893,7 @@ function exportBackup() {
     var v = localStorage.getItem(k);
     if (v !== null) data[k] = v;
   });
+  localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
@@ -2591,6 +2928,36 @@ function importBackup() {
 }
 
 // ============ 初期化 ============
+// 事故報告フォームの未保存変更を追跡（離脱時の警告用）
+var incidentDirtyFlag = false;
+document.addEventListener("click", function(e) {
+  var t = e.target;
+  if (t && t.closest && t.closest("#incidentForm") &&
+      document.getElementById("screen-incident-form").classList.contains("active")) {
+    incidentDirtyFlag = true;
+  }
+});
+document.addEventListener("input", function(e) {
+  var t = e.target;
+  if (t && t.closest && t.closest("#incidentForm")) incidentDirtyFlag = true;
+});
+document.addEventListener("change", function(e) {
+  var t = e.target;
+  if (t && t.closest && t.closest("#incidentForm")) incidentDirtyFlag = true;
+});
+
+function hasUnsavedChanges() {
+  if (document.getElementById("screen-daily").classList.contains("active") && dailyFormDirty()) return true;
+  if (document.getElementById("screen-incident-form").classList.contains("active") && incidentDirtyFlag) return true;
+  if (document.getElementById("screen-support").classList.contains("active") && supportFormDirty()) return true;
+  return false;
+}
+window.addEventListener("beforeunload", function(e) {
+  if (!hasUnsavedChanges()) return;
+  e.preventDefault();
+  e.returnValue = "";
+});
+
 renderNameList();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(function(){});
