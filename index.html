@@ -146,6 +146,40 @@ header p { font-size: 12px; opacity: .9; margin-top: 2px; }
 /* バックアップ未実行・経過警告 */
 .notice.warn-danger { background: #fdecea; border-color: #f0b4ac; color: #b3261e; }
 
+/* 勤務管理カレンダー（出勤職員・打刻忘れ確認） */
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 10px 0 16px; }
+.cal-head { text-align: center; font-size: 11px; font-weight: 700; color: #5f6368; padding: 4px 0; }
+.cal-cell {
+  border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 4px; min-height: 62px;
+  text-align: center; font-size: 12px; cursor: pointer; background: #fff;
+}
+.cal-cell:hover { border-color: #1a73e8; }
+.cal-cell.blank { cursor: default; border-color: transparent; background: transparent; }
+.cal-cell .cal-day { font-weight: 700; font-size: 13px; }
+.cal-cell .cal-staff { color: #1a73e8; margin-top: 3px; font-size: 11px; line-height: 1.35; word-break: break-all; }
+.cal-miss {
+  background: #fff8e1; border-color: #f9d96c;
+}
+.cal-miss .cal-sign { color: #b06000; font-size: 10px; font-weight: 700; }
+.cal-forgot { background: #fdecea; border-color: #f0b4ac; }
+.cal-forgot .cal-sign { color: #b3261e; font-size: 10px; font-weight: 700; }
+.cal-today { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,.25); }
+.cal-cell .cal-tags { margin-top: 3px; font-size: 10px; color: #5f6368; line-height: 1.35; }
+.cal-cell .cal-sign-list { margin-top: 3px; font-size: 10px; font-weight: 700; line-height: 1.35; }
+
+/* カレンダーの出勤職員チップ（モーダル内） */
+.cal-staff-chip {
+  display: inline-block; font-size: 13px; padding: 8px 12px; margin: 3px; border: 1px solid #d9e0e8;
+  border-radius: 999px; background: #fff; cursor: pointer; user-select: none;
+}
+.cal-staff-chip.selected { border-color: #1a73e8; background: #e8f0fe; color: #1a73e8; }
+.cal-staff-chip.disable { opacity: .4; }
+
+/* 自由編集モードの勤退表セル */
+.editable-table td { cursor: pointer; color: #1a73e8; }
+.editable-table td.blank-cell:hover { background: #e8f0fe; }
+.cell-edit-warn { color: #b3261e !important; font-weight: 700; font-size: 11px; }
+
 /* パスワード */
 
 /* 印刷・画面で表示される外泊の注記 */
@@ -369,6 +403,8 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     font-size: 8.5pt; font-weight: 700;
     background: #f2f4f7; border-bottom: 1.2pt solid #222;
   }
+  /* 編集用の青文字・カーソルは印刷時に無効化（帳票として出ないように） */
+  table.print-table td { color: #000 !important; background: transparent !important; cursor: default; }
   /* 表が複数ページにまたがる場合も見出し行を各ページに繰り返す */
   table.print-table thead { display: table-header-group; }
   table.print-table tbody tr { page-break-inside: avoid; }
@@ -600,12 +636,18 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 <div id="screen-records" class="screen">
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-manage-menu')">← 管理者メニューへ</button>
+    <h2>勤務管理</h2>
+    <div class="opt-row" style="max-width:520px;margin:0 auto 10px;">
+      <div class="opt-btn selected" data-rv="list" onclick="setRecordsView(this)">職員別</div>
+      <div class="opt-btn" data-rv="cal" onclick="setRecordsView(this)">カレンダー</div>
+    </div>
     <div class="month-nav">
       <button onclick="changeMonth(-1)">◀ 前月</button>
       <span class="ym" id="recordYM"></span>
       <button onclick="changeMonth(1)">次月 ▶</button>
     </div>
     <div id="recordList"></div>
+    <div id="calList" style="display:none"></div>
   </div>
 </div>
 
@@ -1176,14 +1218,12 @@ function buildSheet(person, ym) {
     if (r && r.in) breakTxt = breakMin ? minToHM(breakMin) : "なし";
     var cls = (wk === "日" || wk === "土") ? ' style="background:#f7f7f7"' : "";
     // 出勤・退勤・休憩はタップで編集可能
-    var inCell = r ? '<td onclick="editTime(\'' + key + '\',\'in\')" style="cursor:pointer;color:#1a73e8">' + (inT || "ー") + '</td>' : '<td></td>';
-    var outCell = r ? '<td onclick="editTime(\'' + key + '\',\'out\')" style="cursor:pointer;color:#1a73e8">' + (outT || "ー") + forgotTxt + '</td>' : '<td></td>';
-    var brCell = r && r.in ? '<td onclick="editBreak(\'' + key + '\')" style="cursor:pointer;color:#1a73e8">' + breakTxt + '</td>' : '<td></td>';
-    // 記録がある日は日付セルに削除ボタン（誤打刻の完全削除用・印刷時は非表示）
+    var inCell = (r || 1) ? '<td onclick="editTime(\'' + key + '\',\'in\')" style="cursor:pointer;color:#1a73e8">' + (inT || "ー") + '</td>' : '<td></td>';
+    var outCell = (r || 1) ? '<td onclick="editTime(\'' + key + '\',\'out\')" style="cursor:pointer;color:#1a73e8">' + (outT || "ー") + forgotTxt + '</td>' : '<td></td>';
+    var brCell = (r || 1) ? '<td onclick="editBreak(\'' + key + '\')" style="cursor:pointer;color:#1a73e8">' + breakTxt + '</td>' : '<td></td>';
+    // 記録がある日は日付セルにも削除ボタン（誤打刻の完全削除用・印刷時は非表示）。無い日もタップで新規作成できるようにする
     var md = Number(ym.split("-")[1]) + "月" + d + "日";
-    var dateCell = r
-      ? '<td style="cursor:pointer;color:#d93025;font-size:11px" onclick="deleteRecord(\'' + key + '\')" title="この日の記録を削除">' + md + '<span class="no-print"> ✕</span></td>'
-      : '<td>' + md + '</td>';
+    var dateCell = '<td style="cursor:pointer;color:' + (r ? '#d93025' : '#1a73e8') + ';font-size:11px" onclick="editDayRecord(\'' + key + '\')" title="' + (r ? 'この日の記録を削除' : 'この日の記録を編集') + '">' + md + (r ? '<span class="no-print"> ✕</span>' : '') + '</td>';
     html += '<tr' + cls + '>' + dateCell + '<td>' + wk + '</td>' + inCell + outCell + brCell + '<td>' + workH + '</td></tr>';
   }
   html += '<tr class="p-total"><td colspan="5">月間勤務時間合計</td><td>' + minToHM(totalMin) + '</td></tr>';
@@ -1203,7 +1243,13 @@ function closeEditModal() { document.getElementById("edit-modal-back").classList
 function editTime(key, field) {
   var recs = loadRecords();
   var r = recs[key];
-  if (!r) return;
+  if (!r) {
+    // 記録のない日は新規作成して編集（自由入力）
+    var parts = key.split("|");
+    r = { date: parts[0], id: parts[1], in: "", out: "" };
+    recs[key] = r;
+    saveRecords(recs);
+  }
   editTarget = { key: key, field: field };
   var cur = r[field] || "";
   var label = field === "in" ? "出勤" : "退勤";
@@ -1223,7 +1269,12 @@ function editTime(key, field) {
 function editBreak(key) {
   var recs = loadRecords();
   var r = recs[key];
-  if (!r) return;
+  if (!r) {
+    var parts = key.split("|");
+    r = { date: parts[0], id: parts[1], in: "", out: "" };
+    recs[key] = r;
+    saveRecords(recs);
+  }
   editTarget = { key: key, field: "break" };
   var cur = (typeof r.break !== "undefined") ? Number(r.break) : 60;
   document.getElementById("editModalTitle").textContent = "休憩時間の修正";
@@ -1304,6 +1355,16 @@ function deleteRecord(key) {
   renderExport();
 }
 
+// 日付セルのタップ：記録がある日は削除、ない日は新規作成して出勤時刻を入れる
+function editDayRecord(key) {
+  var recs = loadRecords();
+  if (recs[key]) { deleteRecord(key); return; }
+  var parts = key.split("|");
+  recs[key] = { date: parts[0], id: parts[1], in: "", out: "" };
+  saveRecords(recs);
+  editTime(key, "in");
+}
+
 function timeToMin(t) {
   var p = t.split(":");
   return Number(p[0]) * 60 + Number(p[1]);
@@ -1314,12 +1375,156 @@ function minToHM(min) {
   return h + "時間" + (m ? m + "分" : "");
 }
 
+var RECORDS_VIEW = "list"; // list=職員別 / cal=カレンダー
+function setRecordsView(el) {
+  RECORDS_VIEW = el.dataset.rv;
+  document.querySelectorAll('#screen-records .opt-btn[data-rv]').forEach(function(b){ b.classList.toggle("selected", b === el); });
+  renderRecords();
+}
 function renderRecords() {
   document.getElementById("recordYM").textContent = currentYM;
+  if (RECORDS_VIEW === "cal") {
+    document.getElementById("recordList").innerHTML = "";
+    document.getElementById("calList").style.display = "";
+    document.getElementById("calList").innerHTML = buildCal(undefined, currentYM);
+    return;
+  }
+  document.getElementById("calList").style.display = "none";
   var list = loadStaff();
   var html = "";
   list.forEach(function(p) { html += buildSheet(p, currentYM); });
   document.getElementById("recordList").innerHTML = html || "<p>名簿が空です</p>";
+}
+
+// ============ カレンダー（出勤職員・打刻忘れ確認） ============
+var calDate = null; // "yyyy-mm-dd"
+
+function buildCal(selYmd, ym) {
+  var parts = ym.split("-");
+  var y = Number(parts[0]), m = Number(parts[1]);
+  var days = monthDays(ym);
+  var firstDow = new Date(y, m - 1, 1).getDay();
+  var recs = loadRecords();
+  var staff = loadStaff();
+  var nameMap = {};
+  staff.forEach(function(p){ nameMap[p.id] = p.name; });
+
+  // 出勤職員・打刻の収集
+  var isOpen = []; // 未退勤（要確認）
+  for (var d = 1; d <= days; d++) {
+    var key = ym + "-" + pad(d);
+    var names = [];
+    var openNames = [];
+    staff.forEach(function(p){
+      var r = recs[key + "|" + p.id];
+      if (r && r.in) {
+        names.push(p.name);
+        // 出勤あり・退勤なし → 忘れの可能性
+        if (!r.out) openNames.push(p.name);
+      }
+    });
+    isOpen.push({ d: d, names: names, open: openNames });
+  }
+
+  var today = todayStr();
+  var html = '<div class="notice" style="margin-bottom:10px">日をタップすると、その日の出勤職員を編集できます。黄色＝記録がない日、赤＝出勤はあるが退勤記録がない日（忘れの可能性）。</div>';
+
+  // 打刻忘れサマリー（今月の未退勤）
+  var allOpen = [];
+  isOpen.forEach(function(o){
+    o.open.forEach(function(n){
+      allOpen.push("　" + n + "（" + m + "月" + o.d + "日）");
+    });
+  });
+  if (allOpen.length) {
+    html += '<div class="notice warn-danger" style="margin-bottom:10px">退勤の打刻がまだない職員：<br>' + allOpen.join("<br>") + '</div>';
+  } else {
+    html += '<div class="notice" style="margin-bottom:10px">退勤の打刻忘れはありません。</div>';
+  }
+
+  html += '<div class="cal-grid">';
+  WEEK.forEach(function(w){ html += '<div class="cal-head">' + w + '</div>'; });
+  for (var i = 0; i < firstDow; i++) html += '<div class="cal-cell" style="visibility:hidden"></div>';
+  for (var d2 = 1; d2 <= days; d2++) {
+    var key2 = y + "-" + pad(m) + "-" + pad(d2);
+    var info = isOpen[d2 - 1];
+    var isToday = key2 === today;
+    var isPast = key2 < today;
+    var isWeekend = WEEK[new Date(y, m - 1, d2).getDay()] === "日" || WEEK[new Date(y, m - 1, d2).getDay()] === "土";
+    var cls = "cal-cell";
+    if (isToday) cls += " cal-today";
+    // 打刻忘れの検出：平日で過去日、出勤記録ゼロ or 出勤あり退勤なし
+    if (info.open.length) cls += " cal-forgot";
+    else if (isPast && !isWeekend && info.names.length === 0) cls += " cal-miss";
+    html += '<div class="' + cls + '" onclick="editCalDate(\'' + key2 + '\')">';
+    html += '<div class="cal-day">' + d2 + '</div>';
+    var sign = "";
+    if (info.open.length) sign = '<div class="cal-sign">打刻忘れ</div>';
+    else if (isPast && !isWeekend && info.names.length === 0) sign = '<div class="cal-sign">記録なし？</div>';
+    html += sign;
+    if (info.names.length) html += '<div class="cal-staff">' + info.names.join("・") + '</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// カレンダーの日をタップ → その日の出勤職員を編集するモーダル
+function editCalDate(ymd) {
+  calDate = ymd;
+  var recs = loadRecords();
+  var staff = loadStaff();
+  var chips = "";
+  staff.forEach(function(p){
+    var on = !!(recs[ymd + "|" + p.id] && recs[ymd + "|" + p.id].in);
+    chips += '<div class="cal-staff-chip' + (on ? " selected" : "") + '" data-sid="' + p.id + '" onclick="toggleCalStaff(this)">' + escapeHtml(p.name) + '</div>';
+  });
+  var html = '<label class="edit-modal-label">' + ymdLabel(ymd) + ' の出勤職員を選ぶ</label>' +
+    '<div style="margin:4px 0 6px">' + chips + '</div>' +
+    '<div class="opt-row" style="gap:8px;margin-top:10px">' +
+    '<button type="button" class="big-btn btn-in" style="flex:1;padding:14px 0;font-size:14px;margin-top:0" onclick="applyCalStaff()">保存</button>' +
+    '<button type="button" class="btn-danger" style="flex:1;padding:14px 0;font-size:14px;margin-top:0" onclick="clearCalDate()">この日の出勤をすべて消す</button>' +
+    '</div>';
+  setEditBody(html);
+  document.getElementById("editModalTitle").textContent = "出勤の編集";
+  document.getElementById("editModalDesc").textContent = ymd;
+  showEditModal();
+}
+
+function toggleCalStaff(el) { el.classList.toggle("selected"); }
+
+function applyCalStaff() {
+  if (!calDate) return;
+  var recs = loadRecords();
+  var staff = loadStaff();
+  var keysToDrop = [];
+  staff.forEach(function(p){
+    var sel = document.querySelector('.cal-staff-chip[data-sid="' + p.id + '"]');
+    var on = sel && sel.classList.contains("selected");
+    var k = calDate + "|" + p.id;
+    if (on) {
+      if (!recs[k]) recs[k] = { date: calDate, id: p.id, in: "", out: "" };
+    } else {
+      keysToDrop.push(k);
+    }
+  });
+  keysToDrop.forEach(function(k){ if (!recs[k] || !recs[k].in) delete recs[k]; });
+  saveRecords(recs);
+  closeEditModal();
+  calDate = null;
+  renderRecords();
+}
+
+function clearCalDate() {
+  if (!calDate) return;
+  var recs = loadRecords();
+  Object.keys(recs).forEach(function(k){
+    if (k.split("|")[0] === calDate) delete recs[k];
+  });
+  saveRecords(recs);
+  closeEditModal();
+  calDate = null;
+  renderRecords();
 }
 
 // ============ 出力・印刷 ============
