@@ -266,7 +266,6 @@ table.daily-table th, table.daily-table td { white-space: nowrap; }
   display: inline-block; font-size: 20px; font-weight: 700; letter-spacing: .14em;
   padding: 3px 24px 6px; border-bottom: 2px solid #222; margin-top: 2px;
 }
-.p-outdate { position: absolute; top: 2px; right: 0; font-size: 11px; color: #666; }
 .p-person { margin: 10px 0 12px; text-align: center; font-size: 14px; }
 .u-line { display: inline-block; min-width: 48px; padding: 0 6px; border-bottom: 1px solid #333; }
 .p-note { margin-top: 8px; font-size: 11px; color: #666; line-height: 1.6; }
@@ -328,7 +327,6 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     display: inline-block; font-size: 13.5pt; font-weight: 700; letter-spacing: .3em;
     padding: 1mm 7mm 1.4mm; border-bottom: 1.4pt solid #111; margin-top: 1.5mm;
   }
-  .p-outdate { position: absolute; top: 0; right: 0; font-size: 8.5pt; color: #333; }
   .p-person { text-align: center; font-size: 10pt; margin: 0 0 2.5mm; }
   .u-line { display: inline-block; min-width: 7mm; padding: 0 2mm; border-bottom: 0.8pt solid #111; }
   .p-note { font-size: 7.5pt; color: #444; margin-top: 1.5mm; line-height: 1.5; }
@@ -1042,12 +1040,10 @@ function ymdLabel(ymd) {
   var t = toWDate(ymd);
   return t.era + t.year + "年" + t.month + "月" + t.day + "日（" + t.week + "）";
 }
-function printOutDate() { return ymdLabel(todayStr()); }
 function underline(t) { return '<span class="u-line">' + t + '</span>'; }
 
 function pDocHead(title) {
   return '<div class="p-doc-head">' +
-    '<div class="p-outdate">出力日：' + printOutDate() + '</div>' +
     '<div class="p-facility">' + FACILITY_NAME + '</div>' +
     '<div class="p-title">' + title + '</div>' +
     '</div>';
@@ -1072,7 +1068,6 @@ function pSign(label, names) {
 function pFooter() {
   return '<div class="p-footer">' +
     '<span>' + FACILITY_NAME + '</span>' +
-    '<span>出力日：' + printOutDate() + '</span>' +
     '</div>';
 }
 
@@ -2517,7 +2512,6 @@ function printSummary() {
   var days = monthDays(currentSummaryYM);
 
   var html = '<div class="sheet"><div class="p-doc-head">' +
-    '<div class="p-outdate">出力日：' + printOutDate() + '</div>' +
     '<div class="p-facility">' + FACILITY_NAME + '</div>' +
     '<div class="p-title">サービス提供実績記録票</div></div>';
   html += pPerson('氏名：' + underline(escapeHtml(u ? u.name : "")) + (u && u.status === "退去" ? "（退去）" : "") + '　　対象期間：' + eraYM(currentSummaryYM));
