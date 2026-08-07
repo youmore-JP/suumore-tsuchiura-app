@@ -508,6 +508,7 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-main')">← 打刻画面へ</button>
     <div id="backupWarn"></div>
+    <div id="userColManage"></div>
     <div class="menu-grid">
       <div class="menu-card" onclick="showScreen('screen-records')"><h3>職員勤退表</h3><p>確認・修正・印刷</p></div>
       <div class="menu-card" onclick="showScreen('screen-staff')"><h3>職員管理</h3><p>職員の追加・削除</p></div>
@@ -528,7 +529,6 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 <div id="screen-daily" class="screen">
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-main')">← トップへ</button>
-    <button class="back-btn" onclick="showScreen('screen-manage-menu')">管理者メニューへ</button>
     <h2>業務日誌</h2>
     <div class="month-nav">
       <button onclick="changeDaily(-1)">◀ 前日</button>
@@ -544,7 +544,6 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 <div id="screen-support" class="screen">
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-main')">← トップへ</button>
-    <button class="back-btn" onclick="showScreen('screen-manage-menu')">管理者メニューへ</button>
     <h2>個別支援記録</h2>
     <div class="month-nav">
       <button onclick="changeSupportDate(-1)">◀ 前日</button>
@@ -643,7 +642,6 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
   <div class="container">
     <button class="back-btn" onclick="showScreen('screen-main')">← トップへ</button>
     <button class="back-btn" onclick="showScreen('screen-daily')">← 業務日誌へ</button>
-    <button class="back-btn" onclick="showScreen('screen-manage-menu')">← 管理者メニューへ</button>
     <h2>ヒヤリハット・事故報告書</h2>
     <button class="save-btn" style="margin-bottom:14px;" onclick="openIncidentForm('list')">新規報告書を作成</button>
     <div id="incidentList" class="staff-list"></div>
@@ -816,7 +814,7 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active");
   window.scrollTo(0, 0);
   if (id === "screen-main") renderNameList();
-  if (id === "screen-manage-menu") renderBackupWarn();
+  if (id === "screen-manage-menu") { renderBackupWarn(); renderUserColToggle(); }
   if (id === "screen-records") renderRecords();
   if (id === "screen-staff") renderStaff();
   if (id === "screen-user") renderUsers();
@@ -1613,15 +1611,17 @@ function userColTitle(id) {
   USER_COL_DEFS.forEach(function(c){ if (c.id === id) t = c.title; });
   return t;
 }
-// 表示列の選択ボタン（業務日誌の利用者状況に表示）
+// 表示列の選択ボタン（管理者メニューで業務日誌の利用者状況の表示列を管理）
 function renderUserColToggle() {
-  var el = document.getElementById("userColOptions");
+  var el = document.getElementById("userColManage");
   if (!el) return "";
   var cur = loadUserCols();
-  var html = "";
+  var html = '<div class="manage-section" style="margin-bottom:16px"><h3 style="margin:0 0 4px">利用者状況の表示列（業務日誌）</h3>' +
+    '<p class="notice" style="margin:0 0 8px">業務日誌の利用者状況表に表示する列を選択します。</p><div id="userColOptions" class="edit-chip-row">';
   USER_COL_DEFS.forEach(function(c) {
     html += '<div class="opt-btn edit-chip' + (cur.indexOf(c.id) >= 0 ? ' selected' : '') + '" data-col="' + c.id + '" onclick="toggleUserCol(this)">' + c.title + '</div>';
   });
+  html += '</div></div>';
   el.innerHTML = html;
 }
 function toggleUserCol(el) {
@@ -1725,7 +1725,6 @@ function renderDaily() {
   var users = loadUsers();
   var us = d.userStatus || {};
   html += '<div class="daily-section"><h3>利用者状況</h3>';
-  html += '<div class="opt-row" style="flex-wrap:wrap;align-items:center;margin-bottom:8px"><span style="font-size:12px;color:#888;margin-right:4px">表示列：</span><div id="userColOptions" class="edit-chip-row"></div></div>';
   if (users.length === 0) {
     html += '<p class="small-note">利用者が登録されていません</p>';
   } else {
@@ -1783,7 +1782,6 @@ function renderDaily() {
   html += '</div>';
 
   document.getElementById("dailyForm").innerHTML = html;
-  renderUserColToggle();
   renderDailyStayOutLine();
 }
 
@@ -1867,7 +1865,6 @@ function refreshDailyStatusTable() {
     us[u.id] = st;
   });
   wrap.innerHTML = buildUserStatusTable(users, us);
-  renderUserColToggle();
   renderDailyStayOutLine();
 }
 
