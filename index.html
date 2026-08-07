@@ -2340,7 +2340,7 @@ function renderSupport() {
   var recs = loadRecords();
   var support = loadSupport();
   var key = currentSupportDate + "|" + uid;
-  var s = support[key] || { note: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
+  var s = support[key] || { note: "", noteAdd: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
 
   // 記入者（その日出勤職員）
   var attending = [];
@@ -2377,6 +2377,9 @@ function renderSupport() {
   html += '<button class="btn-danger" style="flex:1;padding:14px 0;font-size:15px" onclick="clearSupportNote()">本日の様子を一括削除</button>';
   html += '</div></div>';
   html += '<div class="daily-section"><h3>本日の様子</h3><textarea id="sNote" rows="4">' + escapeHtml(s.note) + '</textarea></div>';
+  html += '<div class="daily-section"><h3>追記</h3>' +
+    '<p class="small-note">テンプレートの続きではなく、この欄に追記内容を記入します。印刷では「本日の様子」の続きとして記載されます。</p>' +
+    '<textarea id="sNoteAdd" rows="3">' + escapeHtml(s.noteAdd || "") + '</textarea></div>';
   // 健康状態
   html += '<div class="daily-section"><h3>健康状態</h3><div class="opt-row">';
   html += '<div class="opt-btn' + (s.health === "良好" ? ' selected' : '') + '" data-sf="health" data-sv="良好" onclick="selectHealth(this)">良好</div>';
@@ -2425,6 +2428,7 @@ function saveSupportForm() {
   var old = support[key];
   if (old) for (var k in old) rec[k] = old[k];
   rec.note = document.getElementById("sNote").value;
+  rec.noteAdd = document.getElementById("sNoteAdd").value;
   // 記入者（複数選択）
   var authors = [];
   document.querySelectorAll('#supportForm .opt-btn[data-sf="author"].selected').forEach(function(el){
@@ -2463,14 +2467,16 @@ function getMonday(ymd) {
 // 個別支援記録1日分の行（週・月の印刷で共用）
 function supportRowHTML(ymd, idx, uid) {
   var wd = ["月","火","水","木","金","土","日"];
-  var s = loadSupport()[ymd + "|" + uid] || { note: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
+  var s = loadSupport()[ymd + "|" + uid] || { note: "", noteAdd: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "", author: "" };
   var mealMark = function(v) { return (v === undefined || v === null) ? '' : (v ? '○' : '×'); };
   var activityTxt = s.activity ? (s.activity === "通所" ? "通所されている" : s.activity === "ホーム" ? "ホームで過ごされている" : "") : "";
   if (s.activityOther) activityTxt = s.activityOther;
   var t = toWDate(ymd);
+  var noteBody = escapeHtml(s.note).replace(/\n/g,"<br>");
+  if (s.noteAdd && s.noteAdd.trim()) noteBody += '<br>' + escapeHtml(s.noteAdd).replace(/\n/g,"<br>");
   return '<div class="supday">' +
     '<div class="supday-head"><span>' + wd[idx] + '曜日　' + t.month + '月' + t.day + '日</span><span>記入者：' + escapeHtml(s.author) + '</span></div>' +
-    '<div class="supday-main"><p class="supday-label">本日の様子</p><p class="supday-body">' + escapeHtml(s.note).replace(/\n/g,"<br>") + '</p></div>' +
+    '<div class="supday-main"><p class="supday-label">本日の様子</p><p class="supday-body">' + noteBody + '</p></div>' +
     '<div class="supday-summary">' +
     '<span class="sup-box"><span class="supday-label">健康状態</span><br><span class="supday-body">' + escapeHtml(s.health) + '</span></span>' +
     '<span class="sup-box"><span class="supday-label">食事</span><br><span class="supday-body">昼（' + mealMark(s.mealLunch) + '）夕（' + mealMark(s.mealDinner) + '）朝（' + mealMark(s.mealBreakfast) + '）</span></span>' +
