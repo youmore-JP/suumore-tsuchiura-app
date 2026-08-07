@@ -200,8 +200,20 @@ select#supportUserSelect::-ms-expand { display: none; }
   display: inline-block; font-size: 13px; padding: 8px 12px; margin: 3px; border: 1px solid #d9e0e8;
   border-radius: 999px; background: #fff; cursor: pointer; user-select: none;
 }
-.cal-staff-chip.selected { border-color: #1a73e8; background: #e8f0fe; color: #1a73e8; }
+.cal-staff-chip.selected { border-color: #1a73e8; background: #1a73e8; color: #fff; box-shadow: 0 2px 6px rgba(26,115,232,.35); }
 .cal-staff-chip.disable { opacity: .4; }
+.cal-staff-row { border: 1px solid #e0e5ec; border-radius: 10px; padding: 8px; margin: 6px 0; background: #fafbfc; }
+.cal-staff-row.selected { border-color: #1a73e8; background: #eef4fd; }
+.cal-staff-time {
+  display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: nowrap;
+}
+.cal-staff-time label { font-size: 12px; font-weight: 700; color: #5f6368; flex: 0 0 auto; }
+.cal-staff-time input[type=time],
+.cal-staff-time input[type=number] {
+  flex: 1; min-width: 72px; padding: 8px 6px; font-size: 16px; text-align: center;
+  border: 2px solid #d9e0e8; border-radius: 8px; background: #fff;
+}
+.cal-staff-time input:focus { outline: none; border-color: #1a73e8; }
 
 /* 自由編集モードの勤退表セル */
 .editable-table td { cursor: pointer; color: #1a73e8; }
@@ -1503,29 +1515,43 @@ function buildCal(selYmd, ym) {
   return html;
 }
 
-// カレンダーの日をタップ → その日の出勤職員を編集するモーダル
+// カレンダーの日をタップ → その日の出勤職員+打刻時刻を編集するモーダル
 function editCalDate(ymd) {
   calDate = ymd;
   var recs = loadRecords();
   var staff = loadStaff();
-  var chips = "";
+  var rows = "";
   staff.forEach(function(p){
-    var on = !!(recs[ymd + "|" + p.id] && recs[ymd + "|" + p.id].in);
-    chips += '<div class="cal-staff-chip' + (on ? " selected" : "") + '" data-sid="' + p.id + '" onclick="toggleCalStaff(this)">' + escapeHtml(p.name) + '</div>';
+    var r = recs[ymd + "|" + p.id];
+    var on = !!(r && r.in);
+    rows += '<div class="cal-staff-row' + (on ? " selected" : "") + '" data-sid="' + p.id + '">' +
+      '<div class="cal-staff-chip' + (on ? " selected" : "") + '" data-sid="' + p.id + '" onclick="toggleCalStaff(this)">' + escapeHtml(p.name) + '</div>' +
+      '<div class="cal-staff-time">' +
+      '<label>出勤</label><input type="time" class="cal-in" data-sid="' + p.id + '" value="' + ((r && r.in) || "") + '">' +
+      '<label>退勤</label><input type="time" class="cal-out" data-sid="' + p.id + '" value="' + ((r && r.out) || "") + '">' +
+      '<label>休憩<br><small style="font-size:10px;font-weight:400">分</small></label>' +
+      '<input type="number" class="cal-break" data-sid="' + p.id + '" min="0" step="5" value="' + ((r && typeof r.break !== "undefined") ? r.break : 60) + '">' +
+      '</div>' +
+      '</div>';
   });
-  var html = '<label class="edit-modal-label">' + ymdLabel(ymd) + ' の出勤職員を選ぶ</label>' +
-    '<div style="margin:4px 0 6px">' + chips + '</div>' +
-    '<div class="opt-row" style="gap:8px;margin-top:10px">' +
+  var html = '<label class="edit-modal-label">' + ymdLabel(ymd) + ' の出勤職員と時刻を入力</label>' +
+    '<div style="margin:4px 0 6px">職員名をタップして出勤の有無を切り替えます。</div>' +
+    rows +
+    '<div class="opt-row" style="gap:8px;margin-top:12px">' +
     '<button type="button" class="big-btn btn-in" style="flex:1;padding:14px 0;font-size:14px;margin-top:0" onclick="applyCalStaff()">保存</button>' +
     '<button type="button" class="btn-danger" style="flex:1;padding:14px 0;font-size:14px;margin-top:0" onclick="clearCalDate()">この日の出勤をすべて消す</button>' +
     '</div>';
   setEditBody(html);
-  document.getElementById("editModalTitle").textContent = "出勤の編集";
+  document.getElementById("editModalTitle").textContent = "出勤・時刻の編集";
   document.getElementById("editModalDesc").textContent = ymd;
   showEditModal();
 }
 
-function toggleCalStaff(el) { el.classList.toggle("selected"); }
+function toggleCalStaff(el) {
+  el.classList.toggle("selected");
+  var row = el.closest(".cal-staff-row");
+  if (row) row.classList.toggle("selected", el.classList.contains("selected"));
+}
 
 function applyCalStaff() {
   if (!calDate) return;
@@ -1537,7 +1563,14 @@ function applyCalStaff() {
     var on = sel && sel.classList.contains("selected");
     var k = calDate + "|" + p.id;
     if (on) {
+      var inV = document.querySelector('.cal-in[data-sid="' + p.id + '"]').value;
+      var outV = document.querySelector('.cal-out[data-sid="' + p.id + '"]').value;
+      var brV = parseInt(document.querySelector('.cal-break[data-sid="' + p.id + '"]').value, 10);
       if (!recs[k]) recs[k] = { date: calDate, id: p.id, in: "", out: "" };
+      recs[k].in = inV;
+      recs[k].out = outV;
+      if (!isNaN(brV) && brV >= 0) recs[k].break = brV;
+      if (outV && recs[k].outForgot) recs[k].outForgot = false;
     } else {
       keysToDrop.push(k);
     }
