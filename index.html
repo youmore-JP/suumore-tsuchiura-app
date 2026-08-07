@@ -535,8 +535,8 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
       <span class="ym" id="dailyDate"></span>
       <button onclick="changeDaily(1)">翌日 ▶</button>
     </div>
-    <button class="save-btn" style="margin-bottom:14px;" onclick="printDaily()">この日のPDF出力・印刷</button>
     <div id="dailyForm"></div>
+    <button class="save-btn" style="margin-top:14px;" onclick="printDaily()">この日のPDF出力・印刷</button>
   </div>
 </div>
 
@@ -555,11 +555,11 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
       <label>利用者を選択</label>
       <select id="supportUserSelect" class="daily-count-input" style="width:100%;height:44px;font-size:16px" onchange="renderSupport()"></select>
     </div>
-    <div class="opt-row" style="margin-bottom:14px;">
+    <div id="supportForm"></div>
+    <div class="opt-row" style="margin-top:14px;">
       <button class="big-btn btn-in" style="flex:1" onclick="printSupportWeek()">この週の出力</button>
       <button class="big-btn btn-out" style="flex:1" onclick="printSupportMonth()">当月の出力</button>
     </div>
-    <div id="supportForm"></div>
   </div>
 </div>
 
