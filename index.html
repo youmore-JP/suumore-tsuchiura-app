@@ -2740,7 +2740,7 @@ function renderIncidentForm() {
   html += '</div>';
 
   // 発生内容
-  html += '<div class="inc-sec"><p class="inc-label">6. どんなことがおきた？<span style="color:#d93025">（必須）</span></p>';
+  html += '<div class="inc-sec"><p class="inc-label">6. どんなことがおきた？</p>';
   html += '<div class="field inc-field"><textarea id="incContent" rows="4" style="width:100%;padding:14px;border:1px solid #d9e0e8;border-radius:8px;box-sizing:border-box;font-family:inherit" placeholder="例：歩いていて、つまずいて床に手をついた。痛みはないと言われた。">' + escapeHtml(r.content) + '</textarea></div></div>';
 
   // 対応
@@ -2817,7 +2817,6 @@ function collectIncident() {
 
 function saveIncident(andPrint) {
   var data = collectIncident();
-  if (!data.content.trim()) { alert("発生内容を入力してください"); return; }
   if (!data.date) { alert("発生日を入力してください"); return; }
   if (data.date > todayStr()) { alert("発生日が未来の日付になっています。日付を確認してください。"); return; }
   if (!data.time) { alert("発生時刻を入力してください"); return; }
