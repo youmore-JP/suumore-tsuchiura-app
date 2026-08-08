@@ -1856,11 +1856,12 @@ function defaultDailyData() {
 }
 
 // 利用者ごとの初期状態（平日の昼食は未提供のため「未摂取」、土日は提供予定なので10）
+// 利用者状況2の服薬夕・服薬朝・お風呂・洗濯は実施済みが初期値（服薬昼と外泊のみ未チェック）
 function defaultUserStatus() {
   var p = currentDaily.split("-");
   var w = new Date(Number(p[0]), Number(p[1])-1, Number(p[2])).getDay();
   var lunchDefault = (w === 0 || w === 6) ? 10 : "";
-  return { medLunch: 0, medDinner: 0, medBreakfast: 0, bath: 0, laundry: 0, stayOut: 0, eatLunch: lunchDefault, eatDinner: 10, eatBreakfast: 10, tempInt: 36, tempDec: 0 };
+  return { medLunch: 0, medDinner: 1, medBreakfast: 1, bath: 1, laundry: 1, stayOut: 0, eatLunch: lunchDefault, eatDinner: 10, eatBreakfast: 10, tempInt: 36, tempDec: 0 };
 }
 
 // ============ 利用者状況の表示列設定 ============
