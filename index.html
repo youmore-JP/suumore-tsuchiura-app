@@ -427,7 +427,7 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
   #print-daily-container .print-table td { color: #000 !important; cursor: default; }
 
   /* ===== 帳票ヘッダー ===== */
-  .p-doc-head { text-align: center; position: relative; margin-bottom: 3mm; }
+  .p-doc-head { text-align: center; position: relative; margin-bottom: 2.5mm; }
   .p-facility {
     font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
     font-size: 9pt; letter-spacing: .25em; color: #333; font-weight: 700;
@@ -437,7 +437,7 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
     display: inline-block; font-size: 13.5pt; font-weight: 700; letter-spacing: .3em;
     padding: 1mm 7mm 1.4mm; border-bottom: 1.4pt solid #111; margin-top: 1.5mm;
   }
-  .p-person { text-align: center; font-size: 10pt; margin: 0 0 2.5mm; }
+  .p-person { text-align: center; font-size: 10pt; margin: 0 0 2mm; }
   .u-line { display: inline-block; min-width: 7mm; padding: 0 2mm; border-bottom: 0.8pt solid #111; }
   .p-note { font-size: 7.5pt; color: #444; margin-top: 1.5mm; line-height: 1.5; }
 
@@ -509,19 +509,19 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
   }
 
   /* ===== 個別支援記録 ===== */
-  .supday { border: 0.8pt solid #333; margin-bottom: 4mm; page-break-inside: avoid; }
+  .supday { border: 0.8pt solid #333; margin-bottom: 2.5mm; page-break-inside: avoid; }
   .supday-head {
     display: flex; justify-content: space-between; align-items: baseline;
     font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Noto Sans CJK JP", sans-serif;
     font-size: 9.5pt; font-weight: 700;
     background: #f2f4f7; border-bottom: 0.8pt solid #333;
-    padding: 1.4mm 2.5mm;
+    padding: 1mm 2.5mm;
   }
-  .supday-main { padding: 2mm 2.5mm; min-height: 20mm; }
+  .supday-main { padding: 1.4mm 2.5mm; min-height: 10mm; }
   .supday-label { font-size: 8.5pt; font-weight: 700; color: #444; }
-  .supday-body { font-size: 9.5pt; line-height: 1.7; }
-  .supday-summary { display: flex; gap: 2mm; border-top: 0.5pt solid #999; padding: 2mm 2.5mm; }
-  .sup-box { flex: 1; border: 0.5pt solid #333; padding: 1.5mm 2mm; }
+  .supday-body { font-size: 9.5pt; line-height: 1.55; }
+  .supday-summary { display: flex; gap: 1.5mm; border-top: 0.5pt solid #999; padding: 1.2mm 2.5mm; }
+  .sup-box { flex: 1; border: 0.5pt solid #333; padding: 1.2mm 1.8mm; }
 
   /* ===== 事故報告書 ===== */
   .incident-print { padding: 0; border: none; box-sizing: border-box; }
@@ -2575,7 +2575,7 @@ function supportRowHTML(ymd, idx, uid) {
     '</div></div>';
 }
 function supportNoteBox() {
-  return '<div class="supday"><div class="supday-head"><span>特記・連絡</span></div><div class="supday-main" style="min-height:30mm"><p class="supday-body">&nbsp;</p></div></div>';
+  return '<div class="supday"><div class="supday-head"><span>特記・連絡</span></div><div class="supday-main" style="min-height:24mm"><p class="supday-body">&nbsp;</p></div></div>';
 }
 
 function printSupportWeek() {
