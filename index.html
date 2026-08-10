@@ -859,7 +859,7 @@ function loadUsers() {
   try { return JSON.parse(localStorage.getItem(USER_KEY)) || []; }
   catch(e) { return []; }
 }
-function saveUsers(list) { localStorage.setItem(USER_KEY, JSON.stringify(list)); }
+function saveUsers(list) { saveLS(USER_KEY, JSON.stringify(list)); }
 // 在籍中のみ
 function loadActiveUsers() {
   return loadUsers().filter(function(p){ return p.status !== "退去"; });
@@ -868,23 +868,34 @@ function loadDaily() {
   try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveDaily(obj) { localStorage.setItem(DAILY_KEY, JSON.stringify(obj)); }
+function saveDaily(obj) { saveLS(DAILY_KEY, JSON.stringify(obj)); }
 function loadSupport() {
   try { return JSON.parse(localStorage.getItem(SUPPORT_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveSupport(obj) { localStorage.setItem(SUPPORT_KEY, JSON.stringify(obj)); }
+function saveSupport(obj) { saveLS(SUPPORT_KEY, JSON.stringify(obj)); }
 
 function loadStaff() {
   try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; }
   catch(e) { return []; }
 }
-function saveStaff(list) { localStorage.setItem(STAFF_KEY, JSON.stringify(list)); }
+function saveStaff(list) { saveLS(STAFF_KEY, JSON.stringify(list)); }
 function loadRecords() {
   try { return JSON.parse(localStorage.getItem(RECORDS_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveRecords(obj) { localStorage.setItem(RECORDS_KEY, JSON.stringify(obj)); }
+function saveRecords(obj) { saveLS(RECORDS_KEY, JSON.stringify(obj)); }
+
+// localStorage 保存の共通化。容量超過などで失敗したらトーストで明示する（静かに消えないようにする）
+function saveLS(key, val) {
+  try {
+    localStorage.setItem(key, val);
+    return true;
+  } catch(e) {
+    showToast("保存できませんでした。端末の保存容量を確認し、バックアップを取ってください。", true);
+    return false;
+  }
+}
 
 var WEEK = ["日","月","火","水","木","金","土"];
 
@@ -912,6 +923,10 @@ function showToast(msg, isError) {
 
 // ============ 画面遷移 ============
 function showScreen(id) {
+  var cur = document.querySelector(".screen.active");
+  if (cur && cur.id === id) return;
+  // 未保存の入力があるまま画面を移動すると失われるため確認する（印刷時の自動保存は対象外）
+  if (hasUnsavedChanges() && !confirm("未保存の入力があります。移動すると破棄されます。移動しますか？")) return;
   document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
   document.getElementById(id).classList.add("active");
   window.scrollTo(0, 0);
@@ -1068,7 +1083,7 @@ function showPwChange() { document.getElementById("newPw").value=""; document.ge
 function saveNewPassword() {
   var v = document.getElementById("newPw").value;
   if (!/^\d{4,10}$/.test(v)) { document.getElementById("pwChangeErr").textContent = "4桁以上の数字で入力してください"; return; }
-  localStorage.setItem(ADMIN_PW_KEY, v);
+  if (!saveLS(ADMIN_PW_KEY, v)) { document.getElementById("pwChangeErr").textContent = "保存できませんでした（端末の保存容量を確認してください）"; return; }
   document.getElementById("pwChangeErr").textContent = "";
   alert("パスワードを変更しました");
   showScreen("screen-manage-menu");
@@ -1625,6 +1640,7 @@ function renderExport() {
   } else if (exportType === "summary") {
     html = buildSummaryAllSheets(currentYM);
   } else {
+    saveDailyFormForPrint(); // プレビューにも未保存の日誌入力を反映
     html = buildDailySheetsForMonth(currentYM);
   }
   document.getElementById("exportList").innerHTML = html;
@@ -1632,6 +1648,7 @@ function renderExport() {
 function doPrint() {
   var html = "";
   if (exportType === "daily") {
+    saveDailyFormForPrint(); // 未保存の日誌入力を反映する（保存忘れ対策）
     html = buildDailySheetsForMonth(currentYM);
   } else if (exportType === "summary") {
     html = buildSummaryAllSheets(currentYM);
@@ -1642,6 +1659,16 @@ function doPrint() {
   document.getElementById("print-daily-container").innerHTML = pFooter() + html;
   window.print();
   document.getElementById("print-daily-container").innerHTML = "";
+}
+
+// 表示中の業務日誌フォームがあれば、未保存分を保存してから出力する（印刷・プレビューで共用）
+function saveDailyFormForPrint() {
+  if (!document.getElementById("workText")) return; // フォーム未表示のときは何もしない
+  var daily = loadDaily();
+  if (!daily[currentDaily]) daily[currentDaily] = {};
+  collectDailyForm(daily[currentDaily]);
+  saveDaily(daily);
+  showToast("入力内容を保存してから出力しました");
 }
 
 function buildDailySheetsForMonth(ym) {
@@ -1895,7 +1922,7 @@ function loadUserCols() {
   } catch(e) {}
   return defaultUserCols();
 }
-function saveUserCols(arr) { localStorage.setItem(USER_COL_KEY, JSON.stringify(arr)); }
+function saveUserCols(arr) { saveLS(USER_COL_KEY, JSON.stringify(arr)); }
 function userColTitle(id) {
   var t = "";
   USER_COL_DEFS.forEach(function(c){ if (c.id === id) t = c.title; });
@@ -2389,6 +2416,12 @@ function renderSupport() {
   });
   // 記入者（その日出勤職員から複数選択）
   var sAuthors = (s.authors && s.authors.length) ? s.authors : (s.author ? [s.author] : []);
+  // 保存済みの記入者がその日の出勤者リストにいない場合（退職・データ欠落等）でも、既存の記録を消さないよう選択肢に追加する
+  var knownNames = {};
+  attending.forEach(function(p){ knownNames[p.name] = true; });
+  sAuthors.forEach(function(n){
+    if (n && !knownNames[n]) attending.push({ name: n });
+  });
   var authorBtns = "";
   attending.forEach(function(p) {
     authorBtns += '<div class="opt-btn' + (sAuthors.indexOf(p.name) >= 0 ? ' selected' : '') + '" data-sf="author" data-name="' + escapeHtml(p.name) + '" onclick="toggleAuthor(this)">' + escapeHtml(p.name) + '</div>';
@@ -2456,10 +2489,12 @@ function toggleMeal(el) {
   el.classList.toggle("selected");
 }
 
-function saveSupportForm() {
+// フォームの入力内容を rec に収集する（保存・印刷で共用）
+function collectSupportForm() {
   var sel = document.getElementById("supportUserSelect");
-  var uid = sel.value;
-  if (!uid) return;
+  var uid = sel ? sel.value : "";
+  if (!uid) return null;
+  if (!document.getElementById("sNote")) return null; // フォーム未表示のときは何もしない
   var support = loadSupport();
   var key = currentSupportDate + "|" + uid;
   var rec = { author: "", authors: [], note: "", health: "", mealLunch: 0, mealDinner: 0, mealBreakfast: 0, activity: "", activityOther: "" };
@@ -2467,11 +2502,14 @@ function saveSupportForm() {
   if (old) for (var k in old) rec[k] = old[k];
   rec.note = document.getElementById("sNote").value;
   rec.noteAdd = document.getElementById("sNoteAdd").value;
-  // 記入者（複数選択）
+  // 記入者（複数選択）。選択肢が1つもない場合は保存済みの記入者を維持する（誤って消さないため）
   var authors = [];
   document.querySelectorAll('#supportForm .opt-btn[data-sf="author"].selected').forEach(function(el){
     authors.push(el.dataset.name);
   });
+  if (authors.length === 0 && old) {
+    authors = old.authors && old.authors.length ? old.authors : (old.author ? [old.author] : []);
+  }
   rec.authors = authors;
   rec.author = authors.join("・");
   var healthEl = document.querySelector('#supportForm .opt-btn[data-sf="health"].selected');
@@ -2482,9 +2520,24 @@ function saveSupportForm() {
   var actEl = document.querySelector('#supportForm .opt-btn[data-sf="activity"].selected');
   rec.activity = actEl ? actEl.dataset.sv : "";
   rec.activityOther = document.getElementById("sActivityOther").value;
-  support[key] = rec;
-  saveSupport(support);
+  return { support: support, key: key, rec: rec };
+}
+
+function saveSupportForm() {
+  var c = collectSupportForm();
+  if (!c) return;
+  c.support[c.key] = c.rec;
+  saveSupport(c.support);
   showToast("個別支援記録を保存しました");
+}
+
+// 印刷時に未保存のまま入力内容が古いデータで出るのを防ぐため、フォームがあれば保存してから印刷する
+function saveSupportFormForPrint() {
+  var c = collectSupportForm();
+  if (!c) return;
+  c.support[c.key] = c.rec;
+  saveSupport(c.support);
+  showToast("入力内容を保存してから印刷しました");
 }
 
 function hasSupportSel(f) {
@@ -2542,6 +2595,8 @@ function printSupportWeek() {
     weekDays.push(d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()));
   }
 
+  saveSupportFormForPrint(); // 未保存入力を印刷に反映する（保存忘れ対策）
+
   var page1 = '<div class="sheet">';
   page1 += pDocHead("個別支援記録");
   page1 += pPerson('氏名：' + underline(escapeHtml(u.name)) + '　期間：' + ymdLabel(weekDays[0]) + '〜' + ymdLabel(weekDays[6]));
@@ -2572,6 +2627,8 @@ function printSupportMonth() {
   if (!u) return;
 
   var ym = currentSupportDate.substring(0, 7);
+
+  saveSupportFormForPrint(); // 未保存入力を印刷に反映する（保存忘れ対策）
 
   // 月内の日を取得し、実際の週（月〜日）で分割
   var ymParts = ym.split("-");
@@ -2626,7 +2683,7 @@ function loadIncidents() {
   try { return JSON.parse(localStorage.getItem(INCIDENT_KEY)) || []; }
   catch(e) { return []; }
 }
-function saveIncidents(list) { localStorage.setItem(INCIDENT_KEY, JSON.stringify(list)); }
+function saveIncidents(list) { saveLS(INCIDENT_KEY, JSON.stringify(list)); }
 
 function incidentSummaryFor(ymd) {
   try {
@@ -2969,13 +3026,13 @@ function loadKasan() {
   } catch(e) {}
   return defaultKasan();
 }
-function saveKasanData(list) { localStorage.setItem(KASAN_KEY, JSON.stringify(list)); }
+function saveKasanData(list) { saveLS(KASAN_KEY, JSON.stringify(list)); }
 
 function loadSummary() {
   try { return JSON.parse(localStorage.getItem(SUMMARY_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveSummaryData(obj) { localStorage.setItem(SUMMARY_KEY, JSON.stringify(obj)); }
+function saveSummaryData(obj) { saveLS(SUMMARY_KEY, JSON.stringify(obj)); }
 
 function changeSummaryMonth(delta) {
   var parts = currentSummaryYM.split("-");
@@ -3173,9 +3230,22 @@ function printSummary() {
 }
 
 // ============ データバックアップ ============
-var BACKUP_KEYS = [STAFF_KEY, USER_KEY, RECORDS_KEY, DAILY_KEY, SUPPORT_KEY, INCIDENT_KEY, SUMMARY_KEY, KASAN_KEY];
+var BACKUP_KEYS = [STAFF_KEY, USER_KEY, RECORDS_KEY, DAILY_KEY, SUPPORT_KEY, INCIDENT_KEY, SUMMARY_KEY, KASAN_KEY, ADMIN_PW_KEY, USER_COL_KEY, LAST_BACKUP_KEY];
 var BACKUP_MAGIC = "sumore-tsuchiura-backup";
 var LAST_BACKUP_KEY = "sumore_last_backup";
+
+// 現在のデータ容量（MB）。localStorage はキー単位でしか測れないため、アプリ内キーの合計サイズを測る
+function dataUsageMB() {
+  var bytes = 0;
+  BACKUP_KEYS.forEach(function(k) {
+    var v = localStorage.getItem(k);
+    if (v) {
+      try { bytes += new Blob([v]).size; }
+      catch(e) { bytes += v.length; }
+    }
+  });
+  return bytes / (1024 * 1024);
+}
 
 // 最終バックアップからの経過日数を管理者メニューへ表示（未実施・長期放置の警告）
 function renderBackupWarn() {
@@ -3186,6 +3256,7 @@ function renderBackupWarn() {
   if (!d || isNaN(d.getTime())) {
     el.textContent = "バックアップはまだ一度も実行されていません。大切なデータを守るため、今すぐ「データバックアップ」から書き出してください。";
     el.className = "notice warn-danger";
+    appendUsage(el);
     return;
   }
   var days = Math.floor((Date.now() - d.getTime()) / 86400000);
@@ -3197,6 +3268,21 @@ function renderBackupWarn() {
     el.textContent = "最終バックアップ：" + dateStr + "（" + (days <= 0 ? "今日" : days + "日前") + "）";
     el.className = "notice";
   }
+  appendUsage(el);
+}
+
+// データ容量の表示（上限は約5MB〜10MB。超過すると保存できなくなるため早めに気づけるようにする）
+function appendUsage(el) {
+  var mb = dataUsageMB();
+  if (mb >= 4.5) {
+    el.textContent += "　⚠ データ容量：" + mb.toFixed(1) + "MB（限界に近い）。バックアップ後、不要な記録の整理を検討してください。";
+    el.className = "notice warn-danger";
+  } else if (mb >= 3.0) {
+    el.textContent += "　データ容量：" + mb.toFixed(1) + "MB（残り少なくなっています）。";
+    el.className = "notice warn-danger";
+  } else {
+    el.textContent += "　データ容量：" + mb.toFixed(2) + "MB";
+  }
 }
 
 function exportBackup() {
@@ -3205,7 +3291,7 @@ function exportBackup() {
     var v = localStorage.getItem(k);
     if (v !== null) data[k] = v;
   });
-  localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
+  saveLS(LAST_BACKUP_KEY, new Date().toISOString());
   var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
@@ -3225,12 +3311,18 @@ function importBackup() {
   var reader = new FileReader();
   reader.onload = function() {
     try {
+      // 事前検証：容量の大きすぎるファイルや形式不正を弾く（古いデータを壊す前に確認）
+      var size = new Blob([reader.result]).size;
+      if (size > 5 * 1024 * 1024) { alert("ファイルが大きすぎます（5MB超）。取り込めません。"); return; }
       var data = JSON.parse(reader.result);
       if (data.app !== BACKUP_MAGIC) { alert("このアプリのバックアップファイルではありません"); return; }
+      var missing = 0;
       BACKUP_KEYS.forEach(function(k) {
-        if (typeof data[k] === "string") localStorage.setItem(k, data[k]);
+        if (typeof data[k] !== "string") { missing++; return; }
+        saveLS(k, data[k]);
       });
-      alert("バックアップを取り込みました");
+      if (missing > 0) alert("取り込みました（不足していた項目 " + missing + " 件は無視しました）");
+      else alert("バックアップを取り込みました");
       showScreen("screen-main");
     } catch(e) {
       alert("ファイルを読み込めませんでした（形式が正しくありません）");
