@@ -854,6 +854,7 @@ var USER_KEY = "sumore_users";
 var RECORDS_KEY = "sumore_records";
 var DAILY_KEY = "sumore_daily";
 var SUPPORT_KEY = "sumore_support";
+var LAST_STAMP_KEY = "sumore_last_stamp";
 
 function loadUsers() {
   try { return JSON.parse(localStorage.getItem(USER_KEY)) || []; }
@@ -874,6 +875,45 @@ function loadSupport() {
   catch(e) { return {}; }
 }
 function saveSupport(obj) { saveLS(SUPPORT_KEY, JSON.stringify(obj)); }
+
+// 最後に打刻した職員（名前・ID・時刻・日付）を取得。個別支援記録の記入者プリセットに使う
+function loadLastStamp() {
+  try { return JSON.parse(localStorage.getItem(LAST_STAMP_KEY)) || null; }
+  catch(e) { return null; }
+}
+
+// 夜勤職員の出勤打刻時に、当日分の個別支援記録を未保存の在籍利用者分だけ自動生成して保存する
+function autoFillSupportRecords(person) {
+  var ymd = todayStr();
+  var support = loadSupport();
+  var daily = loadDaily();
+  var dl = daily[ymd];
+  var users = loadActiveUsers();
+  var p = ymd.split("-");
+  var w = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay();
+  var weekend = (w === 0 || w === 6); // 土日
+  var count = 0;
+  users.forEach(function(u) {
+    var key = ymd + "|" + u.id;
+    if (support[key]) return; // 保存済みは上書きしない
+    if (dl && dl.userStatus && dl.userStatus[u.id] && dl.userStatus[u.id].stayOut) return; // 外泊は対象外
+    var t = SUPPORT_TEMPLATES.night[Math.floor(Math.random() * SUPPORT_TEMPLATES.night.length)];
+    support[key] = {
+      note: t.text,
+      noteAdd: "",
+      health: "良好",
+      mealLunch: 0, mealDinner: 1, mealBreakfast: 1, // 昼は未チェック、夕・朝のみ
+      activity: weekend ? "ホーム" : "通所",
+      activityOther: "",
+      author: person.name,
+      authors: [person.name]
+    };
+    count++;
+  });
+  if (count === 0) return 0;
+  saveSupport(support);
+  return count;
+}
 
 function loadStaff() {
   try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; }
@@ -1066,7 +1106,17 @@ function saveStamp(kind) {
   closeModal();
   renderNameList();
   var label = kind === "in" ? "出勤" : "退勤";
-  showToast(label + "を記録しました：" + person.name + " " + time);
+  var msg = label + "を記録しました：" + person.name + " " + time;
+  if (kind === "in") {
+    // 最後に打刻した職員を記憶（個別支援記録の記入者プリセットに使用）
+    saveLS(LAST_STAMP_KEY, JSON.stringify({ name: person.name, id: person.id, time: time, date: todayStr() }));
+    // 夜勤（出勤13時以降）の打刻時のみ、当日分の個別支援記録を自動記載する
+    if (timeToMin(time) >= 13 * 60) {
+      var filled = autoFillSupportRecords(person);
+      if (filled > 0) msg += " ／ " + filled + "人分の個別支援記録を自動記載しました";
+    }
+  }
+  showToast(msg);
 }
 
 // ============ 管理者 ============
@@ -2416,6 +2466,20 @@ function renderSupport() {
   });
   // 記入者（その日出勤職員から複数選択）
   var sAuthors = (s.authors && s.authors.length) ? s.authors : (s.author ? [s.author] : []);
+  // 記入者が未保存で、最後に打刻した職員（夜勤・その日出勤）がいれば自分の名前を選択済みにする
+  if (sAuthors.length === 0) {
+    var ls = loadLastStamp();
+    if (ls && ls.date === currentSupportDate && ls.name) {
+      var lsFound = null;
+      loadStaff().forEach(function(p){
+        if (!lsFound && p.name === ls.name) {
+          var lr = recs[currentSupportDate + "|" + p.id];
+          if (lr && lr.in && timeToMin(lr.in) >= 13 * 60) lsFound = p;
+        }
+      });
+      if (lsFound) sAuthors = [ls.name];
+    }
+  }
   // 保存済みの記入者がその日の出勤者リストにいない場合（退職・データ欠落等）でも、既存の記録を消さないよう選択肢に追加する
   var knownNames = {};
   attending.forEach(function(p){ knownNames[p.name] = true; });
