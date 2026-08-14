@@ -882,7 +882,8 @@ function loadLastStamp() {
   catch(e) { return null; }
 }
 
-// 夜勤職員の出勤打刻時に、当日分の個別支援記録を未保存の在籍利用者分だけ自動生成して保存する
+// 夜勤職員の出勤打刻時に、当日分の個別支援記録を未保存の在籍利用者分だけ自動生成して保存する。
+// すでに保存済みの記録には、この打刻者を記入者として追記する（複数夜勤対応）
 function autoFillSupportRecords(person) {
   var ymd = todayStr();
   var support = loadSupport();
@@ -893,10 +894,21 @@ function autoFillSupportRecords(person) {
   var w = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getDay();
   var weekend = (w === 0 || w === 6); // 土日
   var count = 0;
+  var appended = 0;
   users.forEach(function(u) {
     var key = ymd + "|" + u.id;
-    if (support[key]) return; // 保存済みは上書きしない
     if (dl && dl.userStatus && dl.userStatus[u.id] && dl.userStatus[u.id].stayOut) return; // 外泊は対象外
+    if (support[key]) {
+      // 保存済みの記録：記入者に打刻者の名前を追記（重複・外泊・退去は除く）
+      var authors = (support[key].authors && support[key].authors.length) ? support[key].authors : (support[key].author ? [support[key].author] : []);
+      if (authors.indexOf(person.name) < 0) {
+        authors.push(person.name);
+        support[key].authors = authors;
+        support[key].author = authors.join("・");
+        appended++;
+      }
+      return;
+    }
     var t = SUPPORT_TEMPLATES.night[Math.floor(Math.random() * SUPPORT_TEMPLATES.night.length)];
     support[key] = {
       note: t.text,
@@ -910,9 +922,9 @@ function autoFillSupportRecords(person) {
     };
     count++;
   });
-  if (count === 0) return 0;
+  if (count === 0 && appended === 0) return { filled: 0, appended: 0 };
   saveSupport(support);
-  return count;
+  return { filled: count, appended: appended };
 }
 
 function loadStaff() {
@@ -1112,8 +1124,9 @@ function saveStamp(kind) {
     saveLS(LAST_STAMP_KEY, JSON.stringify({ name: person.name, id: person.id, time: time, date: todayStr() }));
     // 夜勤（出勤13時以降）の打刻時のみ、当日分の個別支援記録を自動記載する
     if (timeToMin(time) >= 13 * 60) {
-      var filled = autoFillSupportRecords(person);
-      if (filled > 0) msg += " ／ " + filled + "人分の個別支援記録を自動記載しました";
+      var res = autoFillSupportRecords(person);
+      if (res.filled > 0) msg += " ／ " + res.filled + "人分の個別支援記録を自動記載しました";
+      if (res.appended > 0) msg += " ／ " + res.appended + "人の記録の記入者に" + person.name + "さんを追記しました";
     }
   }
   showToast(msg);
