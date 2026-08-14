@@ -2077,28 +2077,12 @@ function renderDaily() {
     staffRows += '<tr><td>' + escapeHtml(p.name) + '</td><td>' + inT + '</td><td>' + outT + '</td></tr>';
   });
 
-  // 記入者：日勤・夜勤の複数選択（未保存時は最後に打刻した職員を勤務帯別に自動選択）
+  // 記入者：日勤・夜勤の複数選択（未保存時は打刻した職員を勤務帯別に全員自動選択）
   var dayAuthors = d.authorsDay || [];
   var nightAuthors = d.authorsNight || [];
-  if (dayAuthors.length === 0 || nightAuthors.length === 0) {
-    var ls = loadLastStamp();
-    if (ls && ls.date === currentDaily && ls.name) {
-      // 最後に打刻した職員をその日の出勤記録から探し、勤務帯（日勤/夜勤）の記入者にプリセットする
-      var lsPerson = null;
-      staff.forEach(function(p) {
-        if (!lsPerson && p.name === ls.name) {
-          var lr = recs[currentDaily + "|" + p.id];
-          if (lr && lr.in) lsPerson = { p: p, night: timeToMin(lr.in) >= 13 * 60 };
-        }
-      });
-      if (lsPerson) {
-        if (lsPerson.night && nightAuthors.length === 0) nightAuthors = [ls.name];
-        if (!lsPerson.night && dayAuthors.length === 0) dayAuthors = [ls.name];
-      }
-    }
-  }
-  // 自動選択フォールバック：保存済み・打刻者プリセットがなければ、日勤の最初の出勤職員
-  if (dayAuthors.length === 0 && dayStaff.length > 0) dayAuthors = [dayStaff[0].name];
+  // 自動選択：保存済みがなければ、打刻のある職員を勤務帯（日勤/夜勤）ごとに全員選ぶ
+  if (dayAuthors.length === 0) dayAuthors = dayStaff.map(function(p){ return p.name; });
+  if (nightAuthors.length === 0) nightAuthors = nightStaff.map(function(p){ return p.name; });
 
   function authorBtn(list, p, targetArr) {
     var on = targetArr.indexOf(p.name) >= 0;
