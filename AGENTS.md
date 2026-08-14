@@ -15,12 +15,14 @@
 ## 更新フロー(毎回必ずこの順で)
 
 1. ファイル編集(`index.html` 等)
-2. `git add -A && git commit -m "変更内容の説明"`
-3. `git push`(DNS不調に注意、下記参照)
-4. GitHub Pages のビルド完了を待つ: `gh api repos/youmore-JP/suumore-tsuchiura-app/pages --jq '.status'` が `built` になるまで(10秒間隔で最大60秒)
-5. **sw.js のキャッシュバージョンを上げる**: `var CACHE = "sumore-cache-vN"` のNを+1して commit+push(ステップ4を再度)
+2. `git add -A && git commit -m "変更内容の説明"`(コミットはしてもよい)
+3. **デプロイ(ステップ4〜6)は必ずユーザーの許可を受けてから行う。許可なしで push しない**
+   - ただし、すでに許可済みの作業を最後まで完了させるための再pushは含まない
+4. `git push`(DNS不調に注意、下記参照)
+5. GitHub Pages のビルド完了を待つ: `gh api repos/youmore-JP/suumore-tsuchiura-app/pages --jq '.status'` が `built` になるまで(10秒間隔で最大60秒)
+6. **sw.js のキャッシュバージョンを上げる**: `var CACHE = "sumore-cache-vN"` のNを+1して commit+push(ステップ5を再度)
    - 必須。これがないとタブレットが古いキャッシュを見続ける
-6. 実ブラウザ(Playwright)で動作確認 + オフライン確認
+7. 実ブラウザ(Playwright)で動作確認 + オフライン確認
 
 ## 重要な注意点
 
