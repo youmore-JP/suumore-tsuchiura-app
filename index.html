@@ -848,7 +848,27 @@ tr.p-total td, tr.p-total th { background: #f2f5f8 !important; font-weight: 700;
 
 <script>
 // ============ データ ============
-var PASSWORDS = ["5560", "0556", "556"];
+// 管理者パスワードは SHA-256 ハッシュのみ保持（平文をソースに置かない）。
+// 認証は HTTPS 環境の crypto.subtle でハッシュ比較する。
+var PASSWORDS_SHA256 = [
+  "26adad3a50f1cbe2117eef089088a79f057463f17206ed6914af4914f1e3c267", // 5560
+  "c5f011b4b1fce43e38aa776d1430cab5067085a85e155f2fa678f03e78eae7ef", // 0556
+  "9d6aa3d89c0171b9c2ccd57e6d41ccec3053d3c3f118386e7f10b89ebaa7b8e4"  // 556
+];
+var PW_FAILS = 0;
+var PW_LOCK_UNTIL = 0;
+var PW_MAX_FAILS = 5;
+var PW_LOCK_MS = 30000;
+
+function sha256Hex(str) {
+  var bytes = new TextEncoder().encode(str);
+  return crypto.subtle.digest("SHA-256", bytes).then(function(buf) {
+    var arr = new Uint8Array(buf);
+    var out = "";
+    for (var i = 0; i < arr.length; i++) out += ("0" + arr[i].toString(16)).slice(-2);
+    return out;
+  });
+}
 var STAFF_KEY = "sumore_staff";
 var USER_KEY = "sumore_users";
 var RECORDS_KEY = "sumore_records";
@@ -860,7 +880,7 @@ function loadUsers() {
   try { return JSON.parse(localStorage.getItem(USER_KEY)) || []; }
   catch(e) { return []; }
 }
-function saveUsers(list) { saveLS(USER_KEY, JSON.stringify(list)); }
+function saveUsers(list) { return saveLS(USER_KEY, JSON.stringify(list)); }
 // 在籍中のみ
 function loadActiveUsers() {
   return loadUsers().filter(function(p){ return p.status !== "退去"; });
@@ -869,12 +889,12 @@ function loadDaily() {
   try { return JSON.parse(localStorage.getItem(DAILY_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveDaily(obj) { saveLS(DAILY_KEY, JSON.stringify(obj)); }
+function saveDaily(obj) { return saveLS(DAILY_KEY, JSON.stringify(obj)); }
 function loadSupport() {
   try { return JSON.parse(localStorage.getItem(SUPPORT_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveSupport(obj) { saveLS(SUPPORT_KEY, JSON.stringify(obj)); }
+function saveSupport(obj) { return saveLS(SUPPORT_KEY, JSON.stringify(obj)); }
 
 // 最後に打刻した職員（名前・ID・時刻・日付）を取得。個別支援記録の記入者プリセットに使う
 function loadLastStamp() {
@@ -931,12 +951,12 @@ function loadStaff() {
   try { return JSON.parse(localStorage.getItem(STAFF_KEY)) || []; }
   catch(e) { return []; }
 }
-function saveStaff(list) { saveLS(STAFF_KEY, JSON.stringify(list)); }
+function saveStaff(list) { return saveLS(STAFF_KEY, JSON.stringify(list)); }
 function loadRecords() {
   try { return JSON.parse(localStorage.getItem(RECORDS_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveRecords(obj) { saveLS(RECORDS_KEY, JSON.stringify(obj)); }
+function saveRecords(obj) { return saveLS(RECORDS_KEY, JSON.stringify(obj)); }
 
 // localStorage 保存の共通化。容量超過などで失敗したらトーストで明示する（静かに消えないようにする）
 function saveLS(key, val) {
@@ -1001,9 +1021,11 @@ function renderNameList() {
   document.getElementById("todayLine").textContent =
     "今日：" + t.getFullYear() + "年" + (t.getMonth()+1) + "月" + t.getDate() + "日（" + WEEK[t.getDay()] + "） 名前をタップして打刻してください";
   var list = loadStaff().filter(function(p){ return p.role === "職員" && p.status !== "退職"; });
+  var recs = loadRecords();
+  var keyPrefix = todayStr() + "|";
   var html = "";
   list.forEach(function(p) {
-    var rec = getTodayRecord(p.id);
+    var rec = recs[keyPrefix + p.id] || null;
     var status = "";
     if (rec && rec.in) status = "出勤 " + rec.in;
     if (rec && rec.out) status += " ／ 退勤 " + rec.out;
@@ -1101,7 +1123,7 @@ function saveStamp(kind) {
     if (yRec && yRec.in && !yRec.out && (!tRec || !tRec.in)) {
       yRec.out = time;
       if (yRec.outForgot) yRec.outForgot = false;
-      saveRecords(recs);
+      if (!saveRecords(recs)) { closeModal(); return; }
       closeModal();
       renderNameList();
       showToast("退勤を記録しました（前日の勤務）：" + person.name + " " + time);
@@ -1114,7 +1136,7 @@ function saveStamp(kind) {
   if (kind === "in") recs[key].in = time;
   if (kind === "out") recs[key].out = time;
   if (kind === "out" && recs[key].outForgot) recs[key].outForgot = false;
-  saveRecords(recs);
+  if (!saveRecords(recs)) { closeModal(); return; }
   closeModal();
   renderNameList();
   var label = kind === "in" ? "出勤" : "退勤";
@@ -1135,21 +1157,76 @@ function saveStamp(kind) {
 // ============ 管理者 ============
 var ADMIN_PW_KEY = "sumore_admin_pw";
 function showManageEntry() { showScreen("screen-manage-entry"); document.getElementById("managePw").value=""; document.getElementById("managePwErr").textContent=""; }
-function checkManagePw() {
-  var v = document.getElementById("managePw").value;
+
+// 保存済みパスワードの照合（ハッシュ）。旧形式の平文が残っていた場合は一致時にハッシュへ移行する
+function verifyPassword(hash) {
   var saved = localStorage.getItem(ADMIN_PW_KEY);
-  var ok = (saved !== null) ? (v === saved) : (PASSWORDS.indexOf(v) >= 0);
-  if (ok) { showScreen("screen-manage-menu"); }
-  else { document.getElementById("managePwErr").textContent = "パスワードが違います"; }
+  if (saved === null) return PASSWORDS_SHA256.indexOf(hash) >= 0;
+  if (/^[0-9a-f]{64}$/i.test(saved)) return hash === saved;
+  // 旧形式（平文保存）: 平文のハッシュと一致したらハッシュ保存へ移行
+  return sha256Hex(saved).then(function(savedHash) {
+    if (hash === savedHash) { saveLS(ADMIN_PW_KEY, savedHash); return true; }
+    return false;
+  });
 }
+
+function registerPwFail(err) {
+  PW_FAILS++;
+  if (PW_FAILS >= PW_MAX_FAILS) {
+    PW_FAILS = 0;
+    PW_LOCK_UNTIL = Date.now() + PW_LOCK_MS;
+    err.textContent = "試行回数が多すぎます。30秒間お待ちください";
+  } else {
+    err.textContent = "パスワードが違います";
+  }
+}
+
+function checkManagePw() {
+  var input = document.getElementById("managePw");
+  var err = document.getElementById("managePwErr");
+  var v = input.value;
+  if (!v) { err.textContent = "パスワードを入力してください"; return; }
+  if (Date.now() < PW_LOCK_UNTIL) {
+    var sec = Math.ceil((PW_LOCK_UNTIL - Date.now()) / 1000);
+    err.textContent = "試行回数が多すぎます。" + sec + "秒後にお試しください";
+    return;
+  }
+  if (typeof crypto === "undefined" || !crypto.subtle || typeof TextEncoder === "undefined") {
+    err.textContent = "この環境では認証できません（HTTPSで開いてください）";
+    return;
+  }
+  sha256Hex(v).then(function(hash) {
+    return Promise.resolve(verifyPassword(hash)).then(function(ok) {
+      if (ok) {
+        PW_FAILS = 0; PW_LOCK_UNTIL = 0;
+        input.value = ""; err.textContent = "";
+        showScreen("screen-manage-menu");
+      } else {
+        registerPwFail(err);
+      }
+    });
+  }).catch(function() {
+    err.textContent = "この環境では認証できません（HTTPSで開いてください）";
+  });
+}
+
 function showPwChange() { document.getElementById("newPw").value=""; document.getElementById("pwChangeErr").textContent=""; showScreen("screen-password"); }
 function saveNewPassword() {
   var v = document.getElementById("newPw").value;
-  if (!/^\d{4,10}$/.test(v)) { document.getElementById("pwChangeErr").textContent = "4桁以上の数字で入力してください"; return; }
-  if (!saveLS(ADMIN_PW_KEY, v)) { document.getElementById("pwChangeErr").textContent = "保存できませんでした（端末の保存容量を確認してください）"; return; }
-  document.getElementById("pwChangeErr").textContent = "";
-  alert("パスワードを変更しました");
-  showScreen("screen-manage-menu");
+  var err = document.getElementById("pwChangeErr");
+  if (!/^\d{4,10}$/.test(v)) { err.textContent = "4桁以上の数字で入力してください"; return; }
+  if (typeof crypto === "undefined" || !crypto.subtle || typeof TextEncoder === "undefined") {
+    err.textContent = "この環境では認証できません（HTTPSで開いてください）";
+    return;
+  }
+  sha256Hex(v).then(function(hash) {
+    if (!saveLS(ADMIN_PW_KEY, hash)) { err.textContent = "保存できませんでした（端末の保存容量を確認してください）"; return; }
+    err.textContent = "";
+    alert("パスワードを変更しました");
+    showScreen("screen-manage-menu");
+  }).catch(function() {
+    err.textContent = "この環境では認証できません（HTTPSで開いてください）";
+  });
 }
 
 // ============ 職員管理 ============
@@ -1242,20 +1319,19 @@ function currentYMKey() {
   var d = new Date();
   return d.getFullYear() + "-" + pad(d.getMonth()+1);
 }
-function changeMonth(delta) {
-  var parts = currentYM.split("-");
+function shiftYM(ym, delta) {
+  var parts = ym.split("-");
   var y = Number(parts[0]), m = Number(parts[1]) + delta;
   if (m < 1) { m = 12; y--; }
   if (m > 12) { m = 1; y++; }
-  currentYM = y + "-" + pad(m);
+  return y + "-" + pad(m);
+}
+function changeMonth(delta) {
+  currentYM = shiftYM(currentYM, delta);
   renderRecords();
 }
 function changeMonthExport(delta) {
-  var parts = currentYM.split("-");
-  var y = Number(parts[0]), m = Number(parts[1]) + delta;
-  if (m < 1) { m = 12; y--; }
-  if (m > 12) { m = 1; y++; }
-  currentYM = y + "-" + pad(m);
+  currentYM = shiftYM(currentYM, delta);
   renderExport();
 }
 
@@ -1326,13 +1402,12 @@ function buildSheet(person, ym) {
     if (r && r.in && !r.out && r.outForgot) forgotTxt = "（打刻忘れ）";
     var isStaff = (person.role === "職員");
     // 休憩時間の判定（職員のみ）：手動編集した値は優先、それ以外は自動判定
-    // 自動判定：夜勤（出勤13:00以降かつ退勤が翌早朝4:00〜12:00）→ 3時間 / それ以外 → 1時間
+    // 自動判定：夜勤（出勤13:00以降かつ退勤が翌朝12:00前）→ 3時間 / それ以外 → 1時間
     var breakMin = 0;
     var inMin = r && r.in ? timeToMin(r.in) : 0;
     var outMin = r && r.out ? timeToMin(r.out) : 0;
     var crossedMidnight = r && r.in && r.out && outMin < inMin;
-    var nightWork = isStaff && r && r.in && inMin >= 13 * 60 &&
-      (outMin >= 4 * 60 && outMin < 12 * 60);
+    var nightWork = isStaff && r && r.in && inMin >= 13 * 60 && outMin < 12 * 60;
     if (isStaff && r && r.in) {
       if (r.breakEdited === true ||
           (typeof r.break !== "undefined" && r.break !== null && Number(r.break) !== 60)) {
@@ -1366,7 +1441,7 @@ function buildSheet(person, ym) {
   }
   html += '<tr class="p-total"><td colspan="5">月間勤務時間合計</td><td>' + minToHM(totalMin) + '</td></tr>';
   html += '</tbody></table>';
-  html += pNote("※休憩時間は、夜勤（出勤13時以降・退勤翌4〜12時）3時間／日勤1時間で自動計上されます。個別に異なる場合は管理者画面から修正できます。");
+  html += pNote("※休憩時間は、夜勤（出勤13時以降・退勤翌朝12時前）3時間／日勤1時間で自動計上されます。個別に異なる場合は管理者画面から修正できます。");
   html += '</div>';
   return html;
 }
@@ -1382,11 +1457,9 @@ function editTime(key, field) {
   var recs = loadRecords();
   var r = recs[key];
   if (!r) {
-    // 記録のない日は新規作成して編集（自由入力）
+    // 記録のない日は編集中のみ一時作成し、保存実行時に永続化する（キャンセル時に空レコードを残さない）
     var parts = key.split("|");
     r = { date: parts[0], id: parts[1], in: "", out: "" };
-    recs[key] = r;
-    saveRecords(recs);
   }
   editTarget = { key: key, field: field };
   var cur = r[field] || "";
@@ -1408,10 +1481,9 @@ function editBreak(key) {
   var recs = loadRecords();
   var r = recs[key];
   if (!r) {
+    // 記録のない日は編集中のみ一時作成し、保存実行時に永続化する（キャンセル時に空レコードを残さない）
     var parts = key.split("|");
     r = { date: parts[0], id: parts[1], in: "", out: "" };
-    recs[key] = r;
-    saveRecords(recs);
   }
   editTarget = { key: key, field: "break" };
   var cur = (typeof r.break !== "undefined") ? Number(r.break) : 60;
@@ -1443,7 +1515,11 @@ function applyEditTime() {
   if (!editTarget) return;
   var recs = loadRecords();
   var r = recs[editTarget.key];
-  if (!r) { closeEditModal(); return; }
+  if (!r) {
+    var parts = editTarget.key.split("|");
+    r = { date: parts[0], id: parts[1], in: "", out: "" };
+    recs[editTarget.key] = r;
+  }
   var v = document.getElementById("editTimeInput").value;
   if (v === "") r[editTarget.field] = "";
   else r[editTarget.field] = v;
@@ -1469,7 +1545,11 @@ function applyEditBreak() {
   if (!editTarget) return;
   var recs = loadRecords();
   var r = recs[editTarget.key];
-  if (!r) { closeEditModal(); return; }
+  if (!r) {
+    var parts = editTarget.key.split("|");
+    r = { date: parts[0], id: parts[1], in: "", out: "" };
+    recs[editTarget.key] = r;
+  }
   var v = parseInt(document.getElementById("editBreakInput").value, 10);
   if (isNaN(v) || v < 0) { showToast("0以上の数字で入力してください", true); return; }
   r.break = v;
@@ -1497,9 +1577,7 @@ function deleteRecord(key) {
 function editDayRecord(key) {
   var recs = loadRecords();
   if (recs[key]) { deleteRecord(key); return; }
-  var parts = key.split("|");
-  recs[key] = { date: parts[0], id: parts[1], in: "", out: "" };
-  saveRecords(recs);
+  // 空レコードは保存せず、editTime の保存実行時にのみ永続化する（キャンセル時に空レコードを残さない）
   editTime(key, "in");
 }
 
@@ -1719,9 +1797,7 @@ function doPrint() {
     var list = loadStaff();
     list.forEach(function(p) { html += buildSheet(p, currentYM); });
   }
-  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-  window.print();
-  document.getElementById("print-daily-container").innerHTML = "";
+  printContainer(pFooter() + html);
 }
 
 // 表示中の業務日誌フォームがあれば、未保存分を保存してから出力する（印刷・プレビューで共用）
@@ -1845,6 +1921,20 @@ function buildDailySheet(ymd) {
 // ============ 表示ヘルパー ============
 function escapeHtml(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// 印刷コンテナに内容を入れて印刷し、afterprint で後始末する（即時クリアによる白紙印刷を防ぐ）
+function printContainer(html) {
+  var el = document.getElementById("print-daily-container");
+  el.innerHTML = html;
+  var cleanup = function() {
+    el.innerHTML = "";
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  window.print();
+  // afterprint が発火しない環境向けのフォールバック（遅延クリア）
+  setTimeout(cleanup, 3000);
 }
 
 // ============ 業務日誌 ============
@@ -1985,7 +2075,7 @@ function loadUserCols() {
   } catch(e) {}
   return defaultUserCols();
 }
-function saveUserCols(arr) { saveLS(USER_COL_KEY, JSON.stringify(arr)); }
+function saveUserCols(arr) { return saveLS(USER_COL_KEY, JSON.stringify(arr)); }
 function userColTitle(id) {
   var t = "";
   USER_COL_DEFS.forEach(function(c){ if (c.id === id) t = c.title; });
@@ -2355,9 +2445,7 @@ function printDaily() {
     saveDaily(daily);
   }
   var html = buildDailySheet(currentDaily);
-  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-  window.print();
-  document.getElementById("print-daily-container").innerHTML = "";
+  printContainer(pFooter() + html);
 }
 
 // ============ 個別支援記録 ============
@@ -2689,9 +2777,7 @@ function printSupportWeek() {
     supportRowHTML(weekDays[6], 6, uid) + supportNoteBox();
   page2 += '</div>';
 
-  document.getElementById("print-daily-container").innerHTML = pFooter() + page1 + page2;
-  window.print();
-  document.getElementById("print-daily-container").innerHTML = "";
+  printContainer(pFooter() + page1 + page2);
 }
 
 // 当月分の個別支援記録を出力（週ごとに表裏）
@@ -2750,9 +2836,7 @@ function printSupportMonth() {
     current.setDate(current.getDate() + 7);
   }
 
-  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-  window.print();
-  document.getElementById("print-daily-container").innerHTML = "";
+  printContainer(pFooter() + html);
 }
 
 // ============ ヒヤリハット・事故報告 ============
@@ -2761,7 +2845,7 @@ function loadIncidents() {
   try { return JSON.parse(localStorage.getItem(INCIDENT_KEY)) || []; }
   catch(e) { return []; }
 }
-function saveIncidents(list) { saveLS(INCIDENT_KEY, JSON.stringify(list)); }
+function saveIncidents(list) { return saveLS(INCIDENT_KEY, JSON.stringify(list)); }
 
 function incidentSummaryFor(ymd) {
   try {
@@ -3027,14 +3111,31 @@ function closePwModal() {
   pwModalCallback = null;
 }
 function submitPwModal() {
-  var v = document.getElementById("pwModalInput").value;
-  var saved = localStorage.getItem(ADMIN_PW_KEY);
-  var ok = (saved !== null) ? (v === saved) : (PASSWORDS.indexOf(v) >= 0);
-  if (!ok) { document.getElementById("pwModalErr").textContent = "パスワードが違います"; return; }
-  var cb = pwModalCallback;
-  pwModalCallback = null;
-  closePwModal();
-  if (cb) cb();
+  var input = document.getElementById("pwModalInput");
+  var err = document.getElementById("pwModalErr");
+  var v = input.value;
+  if (!v) { err.textContent = "パスワードを入力してください"; return; }
+  if (Date.now() < PW_LOCK_UNTIL) {
+    var sec = Math.ceil((PW_LOCK_UNTIL - Date.now()) / 1000);
+    err.textContent = "試行回数が多すぎます。" + sec + "秒後にお試しください";
+    return;
+  }
+  if (typeof crypto === "undefined" || !crypto.subtle || typeof TextEncoder === "undefined") {
+    err.textContent = "この環境では認証できません（HTTPSで開いてください）";
+    return;
+  }
+  sha256Hex(v).then(function(hash) {
+    return Promise.resolve(verifyPassword(hash)).then(function(ok) {
+      if (!ok) { registerPwFail(err); return; }
+      PW_FAILS = 0; PW_LOCK_UNTIL = 0;
+      var cb = pwModalCallback;
+      pwModalCallback = null;
+      closePwModal();
+      if (cb) cb();
+    });
+  }).catch(function() {
+    err.textContent = "この環境では認証できません（HTTPSで開いてください）";
+  });
 }
 
 // 事故報告の削除は管理者パスワードを要求（誤操作・悪意からの保護）
@@ -3083,9 +3184,7 @@ function printIncident(id) {
 
   html += '</div>';
 
-  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-  window.print();
-  document.getElementById("print-daily-container").innerHTML = "";
+  printContainer(pFooter() + html);
 }
 
 // ============ 実績記録表（正式様式） ============
@@ -3104,20 +3203,16 @@ function loadKasan() {
   } catch(e) {}
   return defaultKasan();
 }
-function saveKasanData(list) { saveLS(KASAN_KEY, JSON.stringify(list)); }
+function saveKasanData(list) { return saveLS(KASAN_KEY, JSON.stringify(list)); }
 
 function loadSummary() {
   try { return JSON.parse(localStorage.getItem(SUMMARY_KEY)) || {}; }
   catch(e) { return {}; }
 }
-function saveSummaryData(obj) { saveLS(SUMMARY_KEY, JSON.stringify(obj)); }
+function saveSummaryData(obj) { return saveLS(SUMMARY_KEY, JSON.stringify(obj)); }
 
 function changeSummaryMonth(delta) {
-  var parts = currentSummaryYM.split("-");
-  var y = Number(parts[0]), m = Number(parts[1]) + delta;
-  if (m < 1) { m = 12; y--; }
-  if (m > 12) { m = 1; y++; }
-  currentSummaryYM = y + "-" + pad(m);
+  currentSummaryYM = shiftYM(currentSummaryYM, delta);
   renderSummary();
 }
 
@@ -3178,7 +3273,7 @@ for (var d = 1; d <= days; d++) {
 function toggleSummaryCheck(el) {
   var suid = document.getElementById("summaryUserSelect").value;
   // 外泊日は利用・加算のチェックを不可にする（業務日誌と連動）
-  var ymd = currentSummaryYM + "-" + el.dataset.d;
+  var ymd = currentSummaryYM + "-" + pad(Number(el.dataset.d));
   var daily = loadDaily();
   var dlSt = (daily[ymd] && daily[ymd].userStatus) ? daily[ymd].userStatus[suid] || null : null;
   if (dlSt && dlSt.stayOut) {
@@ -3189,10 +3284,9 @@ function toggleSummaryCheck(el) {
   var key = currentSummaryYM + "|" + suid;
   var manual = loadSummary();
   if (!manual[key]) manual[key] = {};
-  var d = el.dataset.d;
   var field = el.dataset.k;
-  if (!manual[key][d]) manual[key][d] = {};
-  manual[key][d][field] = el.classList.contains("selected") ? 1 : 0;
+  if (!manual[key][ymd]) manual[key][ymd] = {};
+  manual[key][ymd][field] = el.classList.contains("selected") ? 1 : 0;
   saveSummaryData(manual);
 }
 
@@ -3201,10 +3295,10 @@ function saveSummaryCell(el) {
   var key = currentSummaryYM + "|" + suid;
   var manual = loadSummary();
   if (!manual[key]) manual[key] = {};
-  var d = el.dataset.d;
+  var ymd = currentSummaryYM + "-" + pad(Number(el.dataset.d));
   var field = el.dataset.k;
-  if (!manual[key][d]) manual[key][d] = {};
-  manual[key][d][field] = el.value;
+  if (!manual[key][ymd]) manual[key][ymd] = {};
+  manual[key][ymd][field] = el.value;
   saveSummaryData(manual);
 }
 
@@ -3302,9 +3396,7 @@ function printSummary() {
   var uid = sel ? sel.value : "";
   if (!uid) { showToast("利用者を選択してください", true); return; }
   var html = buildSummarySheet(uid, currentSummaryYM);
-  document.getElementById("print-daily-container").innerHTML = pFooter() + html;
-  window.print();
-  document.getElementById("print-daily-container").innerHTML = "";
+  printContainer(pFooter() + html);
 }
 
 // ============ データバックアップ ============
@@ -3385,7 +3477,7 @@ function exportBackup() {
 function importBackup() {
   var fileEl = document.getElementById("backupFile");
   if (!fileEl.files || !fileEl.files[0]) { alert("バックアップファイルを選択してください"); return; }
-  if (!confirm("取り込むと、この端末の現在のデータはすべて上書きされます。よろしいですか？")) return;
+  if (!confirm("取り込むと、この端末の現在のデータはすべて削除され、バックアップファイルの内容で復元されます。よろしいですか？")) return;
   var reader = new FileReader();
   reader.onload = function() {
     try {
@@ -3394,13 +3486,22 @@ function importBackup() {
       if (size > 5 * 1024 * 1024) { alert("ファイルが大きすぎます（5MB超）。取り込めません。"); return; }
       var data = JSON.parse(reader.result);
       if (data.app !== BACKUP_MAGIC) { alert("このアプリのバックアップファイルではありません"); return; }
-      var missing = 0;
+      // 真の復元：バックアップに無いキーは削除し、現在のデータをバックアップ内容と完全に一致させる
       BACKUP_KEYS.forEach(function(k) {
-        if (typeof data[k] !== "string") { missing++; return; }
-        saveLS(k, data[k]);
+        if (typeof data[k] === "string") saveLS(k, data[k]);
+        else localStorage.removeItem(k);
       });
-      if (missing > 0) alert("取り込みました（不足していた項目 " + missing + " 件は無視しました）");
-      else alert("バックアップを取り込みました");
+      // メモリ状態を初期化（旧データ由来の表示不整合を防ぐ）
+      currentYM = currentYMKey();
+      currentDaily = todayStr();
+      currentSupportDate = todayStr();
+      currentSummaryYM = currentYMKey();
+      userStatusDraft = null;
+      currentIncidentId = null;
+      incidentFormFrom = "main";
+      incidentDirtyFlag = false;
+      calDate = null;
+      alert("バックアップを取り込みました");
       showScreen("screen-main");
     } catch(e) {
       alert("ファイルを読み込めませんでした（形式が正しくありません）");
@@ -3442,7 +3543,9 @@ window.addEventListener("beforeunload", function(e) {
 
 renderNameList();
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(function(){});
+  navigator.serviceWorker.register("sw.js").catch(function(err) {
+    console.warn("Service Worker の登録に失敗しました:", err);
+  });
 }
 </script>
 </body>
